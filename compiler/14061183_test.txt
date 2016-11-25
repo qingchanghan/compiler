@@ -1,0 +1,125 @@
+const int MAX = 10, MIN = 1;
+const char _CH1 = '+';
+int gbinta[100], gbi;
+char gbchara[5], gbc;
+
+void fun(int n, char c)
+{
+	int i;
+	gbi = n;
+	i = n;
+	do{
+		i = i + 1;
+		gbi = gbi + i;
+	}while(i < MAX)
+	printf("fun: gbi:", gbi);
+	printf("fun: c:", c);
+}
+int fun1(int n)
+{
+	int sum;
+	if(n < MAX)
+	{
+		return (fun1(n+1)+n);
+	}
+	return (n);
+}
+void fun2()
+{
+	const int n = 5;
+	gbi = n * n / n;
+	for(i = gbi - gbi; i < n; i = i + 1)
+	{
+		gbinta[i] = i;
+		printf("fun2: gbinta:", gbinta[i]);
+		for(i = i * i; i ; i = i + 1)
+		{
+			do{
+				i = fun(1, 2, c, a+b);
+			}while(i == 1)
+		}
+	}
+	printf("fun2: c: no such variable");
+}
+char fun3()
+{
+	printf("fun3: return a");
+	return ('a');
+}
+
+void main()
+{
+	const int M_MAX = 20, M_MIN = 10;
+	int n1, n2, n3, n4;
+	char c1, c2, c3, c4, c5, C1;
+	int inta[100];
+	char chara[5];
+
+	scanf(n1, c1);
+	scanf(n2, c2);
+	scanf(n3, c3, n4, c4);
+	scanf(c5);
+	if(n1 < MAX)
+	{
+		fun(n1, c1);
+	}
+	else
+	{
+		printf("n1 >= MAX");
+	}
+	if(n2 != MIN)
+	{
+		printf("n2 != MIN");
+	}
+	else
+	{
+		gbi = fun1(n2);
+		printf("fun1: gbi:", gbi);
+	}
+
+	if(n3 > M_MAX)
+	{
+		printf("n3 <= M_MAX");
+	}
+	else
+	{
+		fun2(n3, c3);
+		fun1(n3);
+	}
+	if(n4 >= M_MIN)
+	{
+		C1 = fun3();
+		printf("fun3: C1:",C1);
+	}
+
+	if(n4 <= M_MIN)
+	{
+		printf("n4 <= M_MIN");
+	}
+
+	if(c1 != C1)
+	{
+		printf("c1 and C1 are not equal.");
+	}
+	if(2)
+	{
+		printf("2 is true.");
+	}
+	if(0)
+	{
+		printf("0 is true.");
+	}
+	else
+	{
+		printf("0 is false.");
+	}
+	if(c5 - c1)
+	{
+		printf("c5 - c1 is true.");
+	}
+	else
+	{
+		printf("c5 - c1 is false.");
+	}
+
+}
