@@ -2,26 +2,21 @@ const int MAX = 10, MIN = 1;
 const char _CH1 = '+';
 int gbinta[100], gbi;
 char gbchara[5], gbc;
+int a[10];
 
 void fun(int n, char c)
 {
 	const int MAX = 10;
 	int i;
-	int n;
-	int i, n, m;
 	gbi = n;
 	i = n;
+	a[i] = c;
 	do{
 		i = i + 1;
 		gbi = gbi + i;
 	}while(i < MAX)
 	printf("fun: gbi:", gbi);
 	printf("fun: c:", c);
-}
-void fun(int la, int lue)
-{
-	lala = 1;
-	lue = 'c' + 'c';
 }
 int fun1(int n)
 {

@@ -9,6 +9,8 @@
 #define SMAX 10000 //字符串常量表最大值
 #define MAX_STACK 10000 //栈最大值
 #define MAX_LABEL 1000 //标签数量最大值
+#define MAX_CODE 20000 //四元式数量最大值
+#define MAX_CODE_TYPE 20 //四元式类型最大长度
 enum symbol{
     notsy, plus, minus, times, div, becomes,
     eql, neq, gtr, geq, lss, leq,
@@ -26,6 +28,11 @@ enum obj{
 enum type{
     inttype, chartype, arraytype, voidtype
 }; //标识符类型
+enum identtype{
+	array_type, function_other, other, 
+	array_int, array_char, function_int, function_char, function_void,
+	constant_int, constant_char, variable_int, variable_char, no_type
+};
 const char symbolstr[][12] = {
     "notsy", "plus", "minus", "times", "div", "becomes",
     "eql", "neq", "gtr", "geq", "lss", "leq",
@@ -85,6 +92,8 @@ const char errormessage[][50] = {
 	"符号表溢出", //33
 	"数组信息向量表溢出", //34
 	"函数表溢出", //35
+	"类型不匹配或未定义", //36
+	"数组下标必须为int类型", //37
 };
 //符号表
 struct table{
@@ -101,8 +110,6 @@ struct arraytable{
     enum type eltyp;
     int tref;
     int high;
-    int elsize;
-    int size;
 }atab[MAX_TAB];
 int a;
 //函数表
@@ -128,7 +135,7 @@ enum symbol wsym[13] = {//保留字对应类型
 };
 FILE *fin; //输入文件指针
 char ch; //当前所读字符
-int cc; //当前所取字符在该行的位置
+int cc = -1; //当前所取字符在该行的位置
 char line[MAX_LINE]; //当前行
 int ll; //当前行长度
 int l; //当前所取字符所在行数
@@ -142,26 +149,39 @@ char lastid[ILNGMAX+1];
 int funcvalid;
 
 //四元式存储区域
+struct code
+{
+	char type[MAX_CODE_TYPE+1];
+	char arg1[ILNGMAX+1];
+	char arg2[ILNGMAX+1];
+	char result[ILNGMAX+1];
+}codes[MAX_CODE];
+int codeindex = 0;
 
-
-//各种栈声明
-//运行栈及其指针
-int rs[MAX_STACK], sp, fp;//sp为当前活动记录基地址，fp为当前栈顶指针
 //临时变量栈及其指针
-struct tempvarstack{
-	enum type typ;
-	int data;
-}tvs[MAX_STACK];
 int tvs_top, lasttvs_top;//函数调用结束后返回的临时变量指针位置
 //Label表及栈
-int label[MAX_LABEL], labx;//labx为当前用到的Label表索引
+int labx;//labx为当前用到的Label表索引
 int falses[MAX_LABEL], fs_top;//false的Label栈及其索引
 int trues[MAX_LABEL], ts_top;//true的Label栈及其索引
 
+char temp_s[ILNGMAX+1];
+char temp_s1[ILNGMAX+1];
+char temp_s2[ILNGMAX+1];
+char temp_s3[ILNGMAX+1];
+enum identtype lasttype;
+enum type exptype;
+int lasttemp;
+int ifpar;
+
 //函数声明
 void getch();//获取一个字符
-void error(int n);//error都直接return了，这里应该再读一个字符
+void error(int n);
 void getsym();
+char* inttoa(int n);
+char* tempvar(int n, int flag);//生成临时变量
+void gen();//生成四元式
+void ifdefine(char id_temp[], enum identtype typ);
 int findduplicate(enum obj object);
 void entertable(enum obj object, enum type thetype);//登录符号表
 void program();//处理总程序
@@ -190,6 +210,7 @@ void term();
 void factor();
 void print(int n);
 void printtable();
+void printcode();
 
 
 int main()
@@ -206,14 +227,7 @@ int main()
     }
     printf("Open successfully!\n");
 
-    cc = -1;
-    ll = 0;
-    l = 0;
     i = 1;
-    t = 0;
-    a = 0;
-    f = 0;
-    sx = 0;
     getch();
     /*while(!feof(fin))
     {
@@ -224,6 +238,7 @@ int main()
     }*/
     program();
     printtable();
+	printcode();
     fclose(fin);
 }
 
@@ -255,7 +270,7 @@ void getch()//获取一个字符
     cc++;
     ch = line[cc];
 }
-void error(int n)//error都直接return了，这里应该再读一个字符
+void error(int n)
 {
     printf("Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
 }
@@ -278,7 +293,7 @@ void getsym()
             getch();
         }
         a[k] = '\0';
-        strcpy(id, a);
+        strcpy_s(id, ILNGMAX+1, a);
         if(k == ILNGMAX && (isalpha(ch) || isdigit(ch) || ch == '_'))//标识符超长
         {
             error(0);
@@ -510,6 +525,166 @@ void getsym()
     }
     return ;
 }
+char* inttoa(int n)
+{
+	sprintf(temp_s, "%d", n);
+	return temp_s;
+}
+char* tempvar(int n, int flag)
+{
+	if(flag == 1)
+	{
+		sprintf(temp_s1, "$t%d", n);
+		return temp_s1;
+	}
+	else if(flag == 2)
+	{
+		sprintf(temp_s2, "$t%d", n);
+		return temp_s2;
+	}
+	else
+	{
+		sprintf(temp_s3, "$t%d", n);
+		return temp_s3;
+	}
+}
+void gen(char type_temp[], char arg1_temp[], char arg2_temp[], char result_temp[])
+{
+	strcpy_s(codes[codeindex].type, MAX_CODE_TYPE+1, type_temp);
+	strcpy_s(codes[codeindex].arg1, ILNGMAX+1, arg1_temp);
+	strcpy_s(codes[codeindex].arg2, ILNGMAX+1, arg2_temp);
+	strcpy_s(codes[codeindex].result, ILNGMAX+1, result_temp);
+	codeindex++;
+}
+void ifdefine(char id_temp[], enum identtype typ)//只检查是否定义过以及类型是否匹配
+{
+	int i;
+	if(typ == array_type)
+	{
+		for(i = t - 1; i >= 0; i--)
+		{
+			if(tab[i].link == 0 && tab[i].obj == function)
+			{
+				break;
+			}
+			if(tab[i].typ == arraytype && strcmp(id_temp, tab[i].name) == 0)
+			{
+				if(atab[tab[i].ref].eltyp == inttype)
+					lasttype = array_int;
+				else if(atab[tab[i].ref].eltyp == chartype)
+					lasttype = array_char;
+				return;
+			}
+		}
+		if(i >= 0)
+		{
+			for(i = 0; i < t; i++)
+			{
+				if(tab[i].link == 0 && tab[i].obj == function)
+				{
+					break;
+				}
+				if(tab[i].typ == arraytype && strcmp(id_temp, tab[i].name) == 0)
+				{
+					if(atab[tab[i].ref].eltyp == inttype)
+						lasttype = array_int;
+					else if(atab[tab[i].ref].eltyp == chartype)
+						lasttype = array_char;
+					return;
+				}
+			}
+		}
+	}
+	else if(typ == function_other)
+	{
+		for(i = 0; i <= f; i++)
+		{
+			if(strcmp(tab[ftab[i].tref].name, id_temp) == 0)
+			{
+				if(tab[ftab[i].tref].typ == chartype)
+				{
+					lasttype = function_char;
+				}
+				else if(tab[ftab[i].tref].typ == inttype)
+				{
+					lasttype = function_int;
+				}
+				else
+				{
+					lasttype = no_type;
+				}
+				return;
+			}
+		}
+	}
+	else if(typ == function_void)
+	{
+		for(i = 0; i <= f; i++)
+		{
+			if(strcmp(tab[ftab[i].tref].name, id_temp) == 0)
+			{
+				if(tab[ftab[i].tref].typ == voidtype)
+				{
+					lasttype = function_void;
+				}
+				else
+				{
+					lasttype = no_type;
+				}
+				return;
+			}
+		}
+	}
+	else if(typ == other)
+	{
+		for(i = t - 1; i >= 0; i--)
+		{
+			if(tab[i].link == 0 && tab[i].obj == function)
+			{
+				break;
+			}
+			if(strcmp(id_temp, tab[i].name) == 0)
+			{
+				if(tab[i].obj == constant && tab[i].typ == inttype)
+					lasttype = constant_int;
+				else if(tab[i].obj == constant && tab[i].typ == chartype)
+					lasttype = constant_char;
+				else if(tab[i].obj == variable && tab[i].typ == inttype)
+					lasttype = variable_int;
+				else if(tab[i].obj == variable && tab[i].typ == chartype)
+					lasttype = variable_char;
+				else
+					lasttype = no_type;
+				return;
+			}
+		}
+		if(i >= 0)
+		{
+			for(i = 0; i < t; i++)
+			{
+				if(tab[i].link == 0 && tab[i].obj == function)
+				{
+					break;
+				}
+				if(strcmp(id_temp, tab[i].name) == 0)
+				{
+					if(tab[i].obj == constant && tab[i].typ == inttype)
+						lasttype = constant_int;
+					else if(tab[i].obj == constant && tab[i].typ == chartype)
+						lasttype = constant_char;
+					else if(tab[i].obj == variable && tab[i].typ == inttype)
+						lasttype = variable_int;
+					else if(tab[i].obj == variable && tab[i].typ == chartype)
+						lasttype = variable_char;
+					else
+						lasttype = no_type;
+					return;
+				}
+			}
+		}
+	}
+	lasttype = no_type;
+}
 int findduplicate(enum obj object)//查找标识符是否重复定义
 //规则如下：
 //1. 常量或变量不能与当前函数内的常量或变量同名，但可以与函数名同名，可以与全局常量或变量同名。
@@ -596,7 +771,7 @@ void entertable(enum obj object, enum type thetype)
             error(32);
             return;
         }
-        strcpy(tab[t].name, lastid);
+        strcpy_s(tab[t].name, ILNGMAX+1, lastid);
         if(t == 0)
             tab[t].link = 0;
         else
@@ -607,12 +782,15 @@ void entertable(enum obj object, enum type thetype)
         {
             tab[t].typ = inttype;
             tab[t].adr = inum;
+			gen("CONST INT", lastid, "", inttoa(inum));
         }
         else if(thetype == chartype)
         {
             tab[t].typ = chartype;
             tab[t].adr = c;
+			gen("CONST CHAR", lastid, "", inttoa(c-'\0'));
         }
+		//TODO:生成常量声明四元式
         t++;
     }
     else if(object == variable)
@@ -638,19 +816,18 @@ void entertable(enum obj object, enum type thetype)
             if(lastsy == intsy)
             {
                 atab[a].eltyp = inttype;
-                atab[a].elsize = 4;
+				gen("INT[]", inttoa(inum), "", lastid);
             }
             else
             {
                 atab[a].eltyp = chartype;
-                atab[a].elsize = 1;
+				gen("CHAR[]", inttoa(inum), "", lastid);
             }
             atab[a].tref = t;
             atab[a].high = inum;
-            atab[a].size = atab[a].elsize * inum;
 
             //登录符号表
-            strcpy(tab[t].name, lastid);
+            strcpy_s(tab[t].name, ILNGMAX+1, lastid);
             if(t == 0)
                 tab[t].link = 0;
             else
@@ -659,25 +836,40 @@ void entertable(enum obj object, enum type thetype)
             tab[t].typ = arraytype;
             tab[t].ref = a;
             tab[t].adr = 0;//TODO:变量在运行栈中分配存储单元的相对地址
+			//TODO：生成数组变量声明四元式
             t++;
             a++;
+			
         }
         else
         {
             //登录符号表
-            strcpy(tab[t].name, lastid);
+            strcpy_s(tab[t].name, ILNGMAX+1, lastid);
             if(t == 0)
                 tab[t].link = 0;
             else
                 tab[t].link = 1;
             tab[t].obj = variable;
             if(lastsy == intsy)
+			{
                 tab[t].typ = inttype;
-            else
+				if(ifpar == 1)
+					gen("PAR INT", "", "", lastid);
+				else
+					gen("INT", "", "", lastid);
+			}
+			else
+			{
                 tab[t].typ = chartype;
-            tab[t].ref = 0;
+				if(ifpar == 1)
+					gen("PAR CHAR", "", "", lastid);
+				else
+					gen("CHAR", "", "", lastid);
+			}
+			tab[t].ref = 0;
             tab[t].adr = 0;//TODO:变量在运行栈中分配存储单元的相对地址
-            t++;
+            //TODO：生成变量声明四元式
+			t++;
         }
     }
     else//函数
@@ -705,18 +897,35 @@ void entertable(enum obj object, enum type thetype)
         ftab[f].psize = 0;//TODO:参数及该函数在运行栈S中的内务信息区所占存储单元数
         ftab[f].vsize = 0;//TODO:所占存储单元总数
 
-        strcpy(tab[t].name, lastid);
+        strcpy_s(tab[t].name, ILNGMAX+1, lastid);
         tab[t].link = 0;
         tab[t].obj = function;
         if(lastsy == intsy)
+		{
             tab[t].typ = inttype;
-        else if(lastsy == charsy)
+			gen("INT FUNC", "", "", lastid);
+		}
+		else if(lastsy == charsy)
+		{
             tab[t].typ = chartype;
-        else
-            tab[t].typ = voidtype;
+			gen("CHAR FUNC", "", "", lastid);
+		}
+		else
+        {  
+			tab[t].typ = voidtype;
+			gen("VOID FUNC", "", "", lastid);
+		}
         tab[t].ref = f;
         tab[t].adr = 0;//TODO:函数相应目标代码的入口地址
-        t++;
+        //TODO：生成函数声明四元式
+		t++;
+		//codes[codeindex].type[0] = 'f';
+		//codes[codeindex].type[1] = 'u';
+		//codes[codeindex].type[2] = 'n';
+		//codes[codeindex].type[3] = 'c';
+		//codes[codeindex].type[4] = '\0';
+		//strcpy_s(codes[codeindex].result, lastid);//生成函数标签四元式
+		//codeindex++;
     }
 }
 void program()//处理总程序
@@ -758,7 +967,7 @@ void program()//处理总程序
             {
                 break;
             }
-            strcpy(lastid, id);
+            strcpy_s(lastid, ILNGMAX+1, id);
             getsym();
             if(sym == comma || sym == semicolon || sym == lbrack)
             {
@@ -782,7 +991,7 @@ void program()//处理总程序
         else if(sym == voidsy)
         {
             getsym();
-            strcpy(lastid, id);
+            strcpy_s(lastid, ILNGMAX+1, id);
             if(sym == mainsy)//主函数
             {
                 maindec();
@@ -818,7 +1027,7 @@ void program()//处理总程序
             {
                 error(10);
             }
-            strcpy(lastid, id);
+            strcpy_s(lastid, ILNGMAX+1, id);
             getsym();
             if(sym != lparent)
             {
@@ -830,7 +1039,7 @@ void program()//处理总程序
         else
         {
             getsym();
-            strcpy(lastid, id);
+            strcpy_s(lastid, ILNGMAX+1, id);
             if(sym == mainsy)//主函数
             {
                 maindec();
@@ -889,7 +1098,7 @@ void constdec()//处理常量声明部分
                     }
                     else
                     {
-                        strcpy(lastid, id);
+                        strcpy_s(lastid, ILNGMAX+1, id);
                         getsym();
                         if(sym != becomes)
                         {
@@ -953,7 +1162,7 @@ void constdec()//处理常量声明部分
                     }
                     else
                     {
-                        strcpy(lastid, id);
+                        strcpy_s(lastid, ILNGMAX+1, id);
                         getsym();
                         if(sym != becomes)
                         {
@@ -1032,7 +1241,7 @@ void variabledec()//处理变量声明部分
     while(sym == comma)
     {
         getsym();
-        strcpy(lastid, id);
+        strcpy_s(lastid, ILNGMAX+1, id);
         if(sym == ident)
         {
             getsym();
@@ -1134,11 +1343,13 @@ void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
             getsym();
             if(sym == ident)
             {
-                strcpy(lastid, id);
+                ifpar = 1;
+				strcpy_s(lastid, ILNGMAX+1, id);
 				if(lastsy == intsy)
 					entertable(variable, inttype);
 				else
 					entertable(variable, chartype);
+				ifpar = 0;
                 printf("line%d.%d 函数参数：%s %s\n", l, cc, symbolvalue[lastsy], id);
                 getsym();
             }
@@ -1233,7 +1444,7 @@ void compoundstatement()
         {
             break;
         }
-        strcpy(lastid, id);
+        strcpy_s(lastid, ILNGMAX+1, id);
         getsym();
         if(sym == comma || sym == semicolon || sym == lbrack)
         {
@@ -1276,7 +1487,7 @@ void statement()//预读一个，多读一个
 {
     if(sym == ident)
     {
-        strcpy(lastid, id);
+        strcpy_s(lastid, ILNGMAX+1, id);
         getsym();
         if(sym == becomes || sym == lbrack)
         {
@@ -1408,7 +1619,10 @@ void dostatement()//预读一个，多读一个
 }
 void forstatement()//预读一个，多读一个
 {
-    getsym();
+	enum type lefttype;
+	int lefttemp;
+	char localid[ILNGMAX+1];
+	getsym();
     if(sym != lparent)
     {
         error(22);
@@ -1418,13 +1632,35 @@ void forstatement()//预读一个，多读一个
     {
         error(10);
     }
+	strcpy_s(lastid, ILNGMAX+1, id);
     getsym();
     if(sym != becomes)
     {
         error(25);
     }
+	//生成赋值语句四元式
+	ifdefine(lastid, other);
+	if(lasttype != variable_int && lasttype != variable_char)
+	{
+		error(36);
+		return;
+	}
+	strcpy_s(localid, ILNGMAX+1, lastid);
+	if(lasttype == variable_int)
+		lefttype = inttype;
+	else
+		lefttype = chartype;
     getsym();
     expression();
+	if(lasttype == no_type)
+	{
+		return;
+	}
+	gen("=", tempvar(lasttemp, 2), "", localid);
+	gen("=", localid, "", tempvar(tvs_top, 3));
+	lasttemp = tvs_top++;
+	exptype = lefttype;
+	//赋值语句四元式生成完毕
     if(sym != semicolon)
     {
         error(26);
@@ -1482,20 +1718,61 @@ void condition()//没有预读，多读一个
 }
 void assignment()//预读到=或[，多读一个
 {
-    if(sym == becomes)
+    enum type lefttype;
+	int lefttemp, indextemp;
+	char localid[ILNGMAX+1];
+	if(sym == becomes)
     {
-        getsym();
+		//判断为变量赋值是否正确
+		ifdefine(lastid, other);
+		if(lasttype != variable_int && lasttype != variable_char)
+		{
+			error(36);
+			return;
+		}
+		strcpy_s(localid, ILNGMAX+1, lastid);
+		if(lasttype == variable_int)
+			lefttype = inttype;
+		else
+			lefttype = chartype;
+		getsym();
         expression();
+		if(lasttype == no_type)
+		{
+			return;
+		}
+		gen("=", tempvar(lasttemp, 2), "", localid);
+		gen("=", localid, "", tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = lefttype;
     }
     else if(sym == lbrack)
     {
-
+		//判断数组调用是否正确
+		ifdefine(lastid, array_type);
+		if(lasttype == no_type)
+		{
+			error(36);
+			return;
+		}
+		if(lasttype == array_int)
+			lefttype = inttype;
+		else
+			lefttype = chartype;
+		strcpy_s(localid, ILNGMAX+1, lastid);
         getsym();
         expression();
+		//这里只需要检查表达式类型是否是int，而不需要判断是否超出数组上界
+		if(exptype != inttype)
+		{
+			error(37);
+			return;
+		}
         if(sym != rbrack)
         {
             error(15);
         }
+		indextemp = lasttemp;
         getsym();
         if(sym != becomes)
         {
@@ -1503,6 +1780,14 @@ void assignment()//预读到=或[，多读一个
         }
         getsym();
         expression();
+		if(lasttype == no_type)
+		{
+			return;
+		}
+		gen("[]=", localid, tempvar(indextemp, 2), tempvar(lasttemp, 3));
+		gen("=[]", localid, tempvar(indextemp, 2), tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = lefttype;
     }
     printf("line%d.%d 赋值语句分析完成\n", l, cc);
 }
@@ -1614,38 +1899,122 @@ void valueparalist()//没有预读，多读一个
 }
 void expression()//预读一个，多读一个
 {
-    if(sym == plus || sym == minus)
+    enum symbol localsy = notsy;
+	int localtemp;
+	enum type lastexptype;
+	if(sym == plus || sym == minus)
     {
-        getsym();
+        localsy = sym;
+		getsym();
     }
     term();
+	if(lasttype == no_type)
+	{
+		return;
+	}
+	if(localsy == minus)
+	{
+		gen("-", "0", tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = inttype;
+	}
+	localtemp = lasttemp;
+	lastexptype = exptype;
     while(sym == plus || sym == minus)
     {
-        getsym();
+        localsy = sym;
+		getsym();
         term();
+		if(lasttype == no_type)
+		{
+			return;
+		}
+		if(localsy == plus)
+		{
+			gen("+", tempvar(lasttemp, 1), tempvar(localtemp, 2), tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			localtemp = lasttemp;
+			exptype = inttype;
+			lastexptype = exptype;
+		}
+		else
+		{
+			gen("-", tempvar(lasttemp, 1), tempvar(localtemp, 2), tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			localtemp = lasttemp;
+			exptype = inttype;
+			lastexptype = exptype;
+		}
     }
     printf("line%d.%d 表达式分析完成\n", l, cc);
 }
 void term()//预读一个，多读一个
 {
-    factor();
+    enum symbol localsy;
+	int localtemp;
+	enum type lastexptype;
+	factor();
+	if(lasttype == no_type)
+	{
+		return;
+	}
+	localtemp = lasttemp;
+	lastexptype = exptype;
     while(sym == times || sym == div)
     {
-        getsym();
+        localsy = sym;
+		getsym();
         factor();
+		if(lasttype == no_type)
+		{
+			return;
+		}
+		if(localsy == times)
+		{
+			gen("*", tempvar(lasttemp, 1), tempvar(localtemp, 2), tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			localtemp = lasttemp;
+			exptype = inttype;
+			lastexptype = exptype;
+		}
+		else
+		{
+			gen("/", tempvar(lasttemp, 1), tempvar(localtemp, 2), tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			localtemp = lasttemp;
+			exptype = inttype;
+			lastexptype = exptype;
+		}
     }
     printf("line%d.%d 项分析完成\n", l, cc);
 }
 void factor()//预读一个，多读一个
 {
-    if(sym == ident)
+	enum identtype localtype;
+	char localid[ILNGMAX+1];
+	if(sym == ident)
     {
-        strcpy(lastid, id);
+		strcpy_s(lastid, ILNGMAX+1, id);
         getsym();
         if(sym == lbrack)
         {
-            getsym();
+            //判断数组调用是否正确
+			ifdefine(lastid, array_type);
+			if(lasttype == no_type)
+			{
+				error(36);
+				return;
+			}
+			localtype = lasttype;
+			strcpy_s(localid, ILNGMAX+1, lastid);
+			getsym();
             expression();
+			//这里只需要检查表达式类型是否是int，而不需要判断是否超出数组上界
+			if(exptype != inttype)
+			{
+				error(37);
+				return;
+			}
             if(sym == rbrack)
             {
                 printf("line%d.%d 因子为<标识符>[<表达式>]的形式\n", l, cc);
@@ -1654,16 +2023,50 @@ void factor()//预读一个，多读一个
             {
                 error(15);
             }
+			gen("=[]", localid, tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			if(localtype == array_int)
+				exptype = inttype;
+			else
+				exptype = chartype;
             getsym();
         }
         else if(sym == lparent)
         {
-            returnfctstatement();
+			//判断有返回值函数调用是否正确
+			ifdefine(lastid, function_other);
+			if(lasttype == no_type)
+			{
+				error(36);
+				return;
+			}
+			localtype = lasttype;
+			strcpy_s(localid, ILNGMAX+1, lastid);
+			returnfctstatement();
             printf("line%d.%d 因子为<有返回值函数调用语句>的形式\n", l, cc);
+			gen("call", localid, "", tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			if(localtype == function_int)
+				exptype = inttype;
+			else
+				exptype = chartype;
         }
         else
         {
-            printf("line%d.%d 因子为<标识符>的形式\n", l, cc);
+			//判断常量或变量调用是否正确
+			ifdefine(lastid, other);
+			if(lasttype == no_type)
+			{
+				error(36);
+				return;
+			}
+			printf("line%d.%d 因子为<标识符>的形式\n", l, cc);
+			gen("=", lastid, "", tempvar(tvs_top, 3));
+			lasttemp = tvs_top++;
+			if(lasttype == constant_int || lasttype == variable_int)
+				exptype = inttype;
+			else
+				exptype = chartype;
         }
     }
     else if(sym == lparent)
@@ -1683,6 +2086,9 @@ void factor()//预读一个，多读一个
     else if(sym == charcon)
     {
         printf("line%d.%d 因子是一个字符\n", l, cc);
+		gen("=", inttoa(c-'\0'), "", tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = chartype;
         getsym();
     }
     else if(sym == plus || sym == minus)
@@ -1697,11 +2103,19 @@ void factor()//预读一个，多读一个
         {
             error(8);
         }
+		if(lastsy == minus)
+			inum *= -1;
+		gen("=", inttoa(inum), "", tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = inttype;
         getsym();
     }
     else if(sym == intcon)
     {
         printf("line%d.%d 因子是一个整数\n", l, cc);
+		gen("=", inttoa(inum), "", tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
+		exptype = inttype;
         getsym();
     }
     else
@@ -1747,7 +2161,17 @@ void printtable()
     printf("\n\n\narray table\n");
     for(i = 0; i < a; i++)
     {
-        printf("id: %2d   name: %10s   tref: %3d   eltyp: %1d   high: %5d   elsize: %1d   size: %3d\n",
-            i, tab[atab[i].tref].name, atab[i].tref, atab[i].eltyp, atab[i].high, atab[i].elsize, atab[i].size);
+        printf("id: %2d   name: %10s   tref: %3d   eltyp: %1d   high: %5d\n",
+            i, tab[atab[i].tref].name, atab[i].tref, atab[i].eltyp, atab[i].high);
     }
+}
+void printcode()
+{
+	int i;
+	printf("\n\n\nmidcode\n");
+	for(i = 0; i < codeindex; i++)
+	{
+		printf("index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
+			codes[i].arg1, codes[i].arg2, codes[i].result);
+	}
 }
