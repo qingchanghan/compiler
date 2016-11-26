@@ -162,8 +162,7 @@ int codeindex = 0;
 int tvs_top, lasttvs_top;//函数调用结束后返回的临时变量指针位置
 //Label表及栈
 int labx;//labx为当前用到的Label表索引
-int falses[MAX_LABEL], fs_top;//false的Label栈及其索引
-int trues[MAX_LABEL], ts_top;//true的Label栈及其索引
+int stringx;
 
 char temp_s[ILNGMAX+1];
 char temp_s1[ILNGMAX+1];
@@ -197,7 +196,7 @@ void statement();
 void ifstatement();
 void dostatement();
 void forstatement();
-void condition();
+int condition(int n);
 void assignment();
 void readstatement();
 void writestatement();
@@ -527,26 +526,36 @@ void getsym()
 }
 char* inttoa(int n)
 {
-	sprintf(temp_s, "%d", n);
+	sprintf_s(temp_s, 10, "%d", n);
 	return temp_s;
 }
 char* tempvar(int n, int flag)
 {
 	if(flag == 1)
 	{
-		sprintf(temp_s1, "$t%d", n);
+		sprintf_s(temp_s1, 10, "$t%d", n);
 		return temp_s1;
 	}
 	else if(flag == 2)
 	{
-		sprintf(temp_s2, "$t%d", n);
+		sprintf_s(temp_s2, 10, "$t%d", n);
 		return temp_s2;
 	}
 	else
 	{
-		sprintf(temp_s3, "$t%d", n);
+		sprintf_s(temp_s3, 10, "$t%d", n);
 		return temp_s3;
 	}
+}
+char* tolabel(int n)
+{
+	sprintf_s(temp_s3, 10, "label%d", n);
+	return temp_s3;
+}
+char* tostring(int n)
+{
+	sprintf_s(temp_s3, 10, "string%d", n);
+	return temp_s3;
 }
 void gen(char type_temp[], char arg1_temp[], char arg2_temp[], char result_temp[])
 {
@@ -1574,12 +1583,13 @@ void statement()//预读一个，多读一个
 }
 void ifstatement()//预读一个，多读一个
 {
-    getsym();
+    int locallabel1, locallabel2;
+	getsym();
     if(sym != lparent)
     {
         error(22);
     }
-    condition();
+    locallabel1 = condition(-1);
     if(sym != rparent)
     {
         error(17);
@@ -1588,14 +1598,25 @@ void ifstatement()//预读一个，多读一个
     statement();
     if(sym == elsesy)
     {
-        getsym();
+        gen("J", "", "", tolabel(labx));
+		locallabel2 = labx++;
+		gen("LABEL", "", "", tolabel(locallabel1));
+		getsym();
         statement();
+		gen("LABEL", "", "", tolabel(locallabel2));
     }
+	else
+	{
+		gen("LABEL", "", "", tolabel(locallabel1));
+	}
     printf("line%d.%d if [else]语句分析完成\n", l, cc);
 }
 void dostatement()//预读一个，多读一个
 {
-    getsym();
+    int locallabel;
+	gen("LABEL", "", "", tolabel(labx));
+	locallabel = labx++;
+	getsym();
     statement();
     if(sym != whilesy)
     {
@@ -1606,7 +1627,7 @@ void dostatement()//预读一个，多读一个
     {
         error(22);
     }
-    condition();
+    condition(locallabel);
     if(sym == rparent)
     {
         printf("line%d.%d do while语句分析完成\n", l, cc);
@@ -1620,36 +1641,32 @@ void dostatement()//预读一个，多读一个
 void forstatement()//预读一个，多读一个
 {
 	enum type lefttype;
-	int lefttemp;
-	char localid[ILNGMAX+1];
+	enum symbol localsym;
+	int lefttemp, locallabel1, locallabel2, localnum;
+	char localid[ILNGMAX+1], localid1[ILNGMAX+1];
 	getsym();
     if(sym != lparent)
     {
         error(22);
     }
+	//第一个赋值语句
     getsym();
     if(sym != ident)
     {
         error(10);
     }
-	strcpy_s(lastid, ILNGMAX+1, id);
-    getsym();
-    if(sym != becomes)
-    {
-        error(25);
-    }
-	//生成赋值语句四元式
-	ifdefine(lastid, other);
+	ifdefine(id, other);
 	if(lasttype != variable_int && lasttype != variable_char)
 	{
 		error(36);
 		return;
 	}
-	strcpy_s(localid, ILNGMAX+1, lastid);
-	if(lasttype == variable_int)
-		lefttype = inttype;
-	else
-		lefttype = chartype;
+	strcpy_s(localid, ILNGMAX+1, id);
+    getsym();
+    if(sym != becomes)
+    {
+        error(25);
+    }
     getsym();
     expression();
 	if(lasttype == no_type)
@@ -1659,22 +1676,31 @@ void forstatement()//预读一个，多读一个
 	gen("=", tempvar(lasttemp, 2), "", localid);
 	gen("=", localid, "", tempvar(tvs_top, 3));
 	lasttemp = tvs_top++;
-	exptype = lefttype;
-	//赋值语句四元式生成完毕
+	gen("LABEL", "", "", tolabel(labx));
+	locallabel1 = labx++;
     if(sym != semicolon)
     {
         error(26);
     }
-    condition();
+	//条件
+    locallabel2 = condition(-1);
     if(sym != semicolon)
     {
         error(26);
     }
+	//保存步长信息
     getsym();
     if(sym != ident)
     {
         error(10);
     }
+	ifdefine(id, other);
+	if(lasttype != variable_int && lasttype != variable_char)
+	{
+		error(36);
+		return;
+	}
+	strcpy_s(localid, ILNGMAX+1, id);
     getsym();
     if(sym != becomes)
     {
@@ -1685,16 +1711,25 @@ void forstatement()//预读一个，多读一个
     {
         error(10);
     }
+	ifdefine(id, other);
+	if(lasttype == no_type)
+	{
+		error(36);
+		return;
+	}
+	strcpy_s(localid1, ILNGMAX+1, id);
     getsym();
     if(sym != plus && sym != minus)
     {
-        error(27);
+		error(27);
     }
+	localsym = sym;
     getsym();
     if(sym != intcon)
     {
         error(8);
     }
+	localnum = inum;
     getsym();
     if(sym != rparent)
     {
@@ -1702,19 +1737,78 @@ void forstatement()//预读一个，多读一个
     }
     getsym();
     statement();
+	if(localsym == plus)
+	{
+		gen("+", localid1, inttoa(localnum), localid);
+	}
+	else
+	{
+		gen("-", localid1, inttoa(localnum), localid);
+	}
+	gen("J", "", "", tolabel(locallabel1));
+	gen("LABEL", "", "", tolabel(locallabel2));
     printf("line%d.%d for语句分析完成\n", l, cc);
 }
-void condition()//没有预读，多读一个
+int condition(int n)//没有预读，多读一个
 {
-    getsym();
+	enum symbol localsym;
+	int lefttemp;
+	getsym();
     expression();
+	if(lasttype == no_type)
+	{
+		return;
+	}
+	lefttemp = lasttemp;
     if(sym == eql || sym == neq || sym == gtr
     || sym == geq || sym == lss || sym == leq)
     {
-        getsym();
+        localsym = sym;
+		getsym();
         expression();
+		if(n == -1)//label未建立，条件为反
+		{
+			switch(localsym)
+			{
+			case eql:gen("!=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			case neq:gen("==", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			case gtr:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			case geq:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			case lss:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			case leq:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+				break;
+			}
+		}
+		else//label已建立，条件为正
+		{
+			switch(localsym)
+			{
+			case eql:gen("==", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			case neq:gen("!=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			case gtr:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			case geq:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			case lss:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			case leq:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+				break;
+			}
+		}
     }
+	else
+	{
+		
+	}
     printf("line%d.%d 条件分析完成\n", l, cc);
+	return labx - 1;
 }
 void assignment()//预读到=或[，多读一个
 {
@@ -1804,6 +1898,16 @@ void readstatement()//预读一个，多读一个
         {
             error(10);
         }
+		ifdefine(id, other);
+		if(lasttype != variable_int && lasttype != variable_char)
+		{
+			error(36);
+			return;
+		}
+		if(lasttype == variable_int)
+			gen("READ INT", "", "", id);
+		else
+			gen("READ CHAR", "", "", id);
         getsym();
     }while(sym == comma);
     if(sym != rparent)
@@ -1823,11 +1927,20 @@ void writestatement()//预读一个，多读一个
     getsym();
     if(sym == stringcon)
     {
-        getsym();
+        gen("WRITE STRING", "", "", tostring(stringx++));
+		getsym();
         if(sym == comma)
         {
             getsym();
             expression();
+			if(lasttype == no_type)
+			{
+				return;
+			}
+			if(exptype == inttype)
+				gen("WRTIE INT", "", "", tempvar(lasttemp, 3));
+			else
+				gen("WRTIE CHAR", "", "", tempvar(lasttemp, 3));
             if(sym != rparent)
             {
                 error(17);
@@ -1846,6 +1959,14 @@ void writestatement()//预读一个，多读一个
     else
     {
         expression();
+		if(lasttype == no_type)
+		{
+			return;
+		}
+		if(exptype == inttype)
+			gen("WRTIE INT", "", "", tempvar(lasttemp, 3));
+		else
+			gen("WRTIE CHAR", "", "", tempvar(lasttemp, 3));
         if(sym != rparent)
         {
             error(17);

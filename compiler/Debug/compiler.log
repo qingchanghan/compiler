@@ -1,21 +1,17 @@
-﻿生成启动时间为 2016/11/27 1:06:10。
+﻿生成启动时间为 2016/11/27 5:09:34。
      1>项目“C:\Users\Qingchang Han\documents\visual studio 2010\Projects\compiler\compiler\compiler.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Debug\compiler.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
        ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TC /analyze- /errorReport:prompt main.c
          main.c
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(226): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(221): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(534): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : 参见“sprintf”的声明
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(541): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : 参见“sprintf”的声明
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(546): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : 参见“sprintf”的声明
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(551): warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
-                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(371) : 参见“sprintf”的声明
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1701): warning C4101: “lefttemp”: 未引用的局部变量
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1645): warning C4101: “lefttemp”: 未引用的局部变量
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1643): warning C4101: “lefttype”: 未引用的局部变量
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1760): warning C4033: “condition”必须返回值
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1816): warning C4101: “lefttemp”: 未引用的局部变量
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(1812): warning C4715: “condition”: 不是所有的控件路径都返回值
        ManifestResourceCompile:
          所有输出均为最新。
        Link:
@@ -34,4 +30,4 @@
 
 生成成功。
 
-已用时间 00:00:01.11
+已用时间 00:00:00.98
