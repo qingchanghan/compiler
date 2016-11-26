@@ -1,0 +1,130 @@
+const int Max_num =  26 ;
+const int Min_num = 0 , Mid_num = 13 ;
+const char Max_chr = 'Z' ;
+const char Min_chr = 'a',Mid_chr = 'z';
+
+int var_1 ;
+int val_2,val_3;
+
+char var_4;
+char val_5,val_6;
+
+
+int func1(int a){
+    const int i = 20;        
+    
+    return (a+1) ;              
+ }
+
+int func2(int a,int b,char c){
+    int i ; 
+    i = a - b + c ;
+    return (i);
+                 
+}
+
+void func3(){
+
+    const char c = 'c';    
+}
+
+void func4(char c){
+    char d  ;             
+}
+
+char func5(int a,int b,char c){
+                         
+    return (c+a-b); 
+}
+
+char func6(){
+    int intarr[100],intarr2[100];
+    char chararr [100],chararr2[10] ;
+
+}
+
+int recur(int i){
+
+    if(i == 0){
+        return (1);
+    }
+    else{
+        return (recur(i-1)+1);
+    }
+
+}
+
+
+void main(){
+    int intarr[100] ;
+    char chararr [100] ;
+    int input_int;
+    char input_char ;
+
+    int _a;
+    char _A;
+ ;
+     scanf (_a);
+     scanf(_A);
+    scanf(input_int);
+    scanf(input_char);
+
+    if(input_int<Mid_num){
+        input_int = Mid_num;
+    }
+
+
+
+
+    if(input_int>Max_num){
+        input_int = 25;
+    }
+    else {
+        input_int = input_int;
+    }
+
+    if(input_int<=Mid_num){
+        input_int = input_int;
+    }
+    if(input_int>=Mid_num){
+        input_int = input_int;
+    }
+
+    if(input_int!=input_int){
+        input_int = Max_num ;
+    }
+    if (input_int == input_int)
+    {
+        input_int = input_int ;
+    }
+
+
+    _a = ((5+5) * (2+1))+(10*7) ;
+
+
+
+
+
+
+
+input_int = 1 ;
+input_int = func2(1,2,4);
+input_int = 'a' *10 ;
+input_int = +(func2(1,2,4)*intarr[10*9-1]);
+input_int = -(func2(1,2,4)*intarr[10*9-1]);
+
+
+
+
+
+func1(1);
+func2(1,2,3);
+func3();
+func4('c');
+func5(1,2,4);
+func6();
+
+printf(recur(Max_num));
+return;
+
+}

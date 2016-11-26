@@ -5,7 +5,10 @@ char gbchara[5], gbc;
 
 void fun(int n, char c)
 {
+	const int MAX = 10;
 	int i;
+	int n;
+	int i, n, m;
 	gbi = n;
 	i = n;
 	do{
@@ -15,8 +18,14 @@ void fun(int n, char c)
 	printf("fun: gbi:", gbi);
 	printf("fun: c:", c);
 }
+void fun(int la, int lue)
+{
+	lala = 1;
+	lue = 'c' + 'c';
+}
 int fun1(int n)
 {
+	const int fun1 = 10;
 	int sum;
 	if(n < MAX)
 	{

@@ -7,6 +7,8 @@
 #define MAX_LINE 200 //最大行长度
 #define MAX_TAB 2000//表项最大值
 #define SMAX 10000 //字符串常量表最大值
+#define MAX_STACK 10000 //栈最大值
+#define MAX_LABEL 1000 //标签数量最大值
 enum symbol{
     notsy, plus, minus, times, div, becomes,
     eql, neq, gtr, geq, lss, leq,
@@ -79,6 +81,10 @@ const char errormessage[][50] = {
     "应为,或)", //29
     "应为(或;", //30
     "应为int常量、+或-", //31
+    "标识符重复定义", //32
+	"符号表溢出", //33
+	"数组信息向量表溢出", //34
+	"函数表溢出", //35
 };
 //符号表
 struct table{
@@ -133,11 +139,30 @@ char id[ILNGMAX+1]; //识别到的标识符
 char string[STRLNGMAX+1]; //识别到的字符串
 enum symbol lastsy;
 char lastid[ILNGMAX+1];
+int funcvalid;
+
+//四元式存储区域
+
+
+//各种栈声明
+//运行栈及其指针
+int rs[MAX_STACK], sp, fp;//sp为当前活动记录基地址，fp为当前栈顶指针
+//临时变量栈及其指针
+struct tempvarstack{
+	enum type typ;
+	int data;
+}tvs[MAX_STACK];
+int tvs_top, lasttvs_top;//函数调用结束后返回的临时变量指针位置
+//Label表及栈
+int label[MAX_LABEL], labx;//labx为当前用到的Label表索引
+int falses[MAX_LABEL], fs_top;//false的Label栈及其索引
+int trues[MAX_LABEL], ts_top;//true的Label栈及其索引
 
 //函数声明
 void getch();//获取一个字符
 void error(int n);//error都直接return了，这里应该再读一个字符
 void getsym();
+int findduplicate(enum obj object);
 void entertable(enum obj object, enum type thetype);//登录符号表
 void program();//处理总程序
 void constdec();//处理常量声明部分
@@ -163,7 +188,6 @@ void valueparalist();
 void expression();
 void term();
 void factor();
-
 void print(int n);
 void printtable();
 
@@ -171,9 +195,9 @@ void printtable();
 int main()
 {
     int i;
-    char sin[FILENAME_MAX];
+    char sin[FILENAME_MAX] = "14061183_test.txt";
     printf("please input source program file name : \n");
-    scanf("%s", sin);
+    //scanf("%s", sin);
     fin = fopen(sin, "r");
     if(fin == NULL)
     {
@@ -199,7 +223,6 @@ int main()
         print(i++);
     }*/
     program();
-    printf("a: %d\n", a);
     printtable();
     fclose(fin);
 }
@@ -487,10 +510,92 @@ void getsym()
     }
     return ;
 }
+int findduplicate(enum obj object)//查找标识符是否重复定义
+//规则如下：
+//1. 常量或变量不能与当前函数内的常量或变量同名，但可以与函数名同名，可以与全局常量或变量同名。
+//2. 函数可以和当前函数内的常变量同名，可以和其他函数内的常变量同名，不可以和其他函数同名，不可以和全局变量同名。
+{
+    int i;
+    if(object == constant || object == variable)
+    {
+        //常量或者变量 直接往前找 分两种情况
+        //1. 找到link为0，也就是函数名
+        //2. 找到符号表开头
+        for(i = t - 1; i >= 0; i--)
+        {
+            if(tab[i].link == 2)
+            {
+                return 0;
+            }
+            if(tab[i].link == 0)
+            {
+                if(strcmp(tab[i].name, lastid) != 0)
+                {
+                    return 0;
+                }
+                else
+                {
+                    if(tab[i].obj == function)
+                        return 0;
+                    else
+                        return 1;
+                }
+            }
+            if(strcmp(tab[i].name, lastid) == 0)
+                return 1;
+        }
+        return 0;
+    }
+    else if(object == function)
+    {
+        //函数 函数不能和别的函数同名 不能和全局变量同名
+        if(t >= 1)
+        {
+            if(tab[0].obj == constant || tab[0].obj == variable)
+            {
+                if(strcmp(tab[0].name, lastid) == 0)//查看第一项是否同名
+                    return 1;
+                else
+                {
+                    for(i = 1; i < t; i++)
+                    {
+                        if(tab[i].link == 0)
+                            break;
+                        if(strcmp(tab[i].name, lastid) == 0)//查看所有全局变量是否与函数同名
+                        {
+                            return 1;
+                        }
+                    }
+                }
+            }
+        }
+        //查看所有函数是否与当前函数同名
+        if(f >= 1)
+        {
+            for(i = 0; i < f; i++)
+            {
+                if(strcmp(tab[ftab[i].tref].name, lastid) == 0)
+                    return 1;
+            }
+        }
+        return 0;
+    }
+	return 0;
+}
 void entertable(enum obj object, enum type thetype)
 {
-    if(object == constant)
+	if(object == constant)
     {
+		if(t >= MAX_TAB)
+		{
+			error(33);
+			return;
+		}
+		if(findduplicate(constant) == 1)
+        {
+            error(32);
+            return;
+        }
         strcpy(tab[t].name, lastid);
         if(t == 0)
             tab[t].link = 0;
@@ -512,9 +617,24 @@ void entertable(enum obj object, enum type thetype)
     }
     else if(object == variable)
     {
+		if(t >= MAX_TAB)
+		{
+			error(33);
+			return;
+		}
+		if(findduplicate(variable) == 1)
+        {
+            error(32);
+            return;
+        }
         if(thetype == arraytype)
         {
-            //登录数组表
+            if(a >= MAX_TAB)
+			{
+				error(34);
+				return;
+			}
+			//登录数组表
             if(lastsy == intsy)
             {
                 atab[a].eltyp = inttype;
@@ -562,6 +682,24 @@ void entertable(enum obj object, enum type thetype)
     }
     else//函数
     {
+        if(f >= MAX_TAB)
+		{
+			error(35);
+			funcvalid = -1;
+			return;
+		}
+		if(t >= MAX_TAB)
+		{
+			error(32);
+			funcvalid = -1;
+			return;
+		}
+		if(findduplicate(function) == 1)
+        {
+			error(32);
+			funcvalid = -1;
+            return;
+        }
         ftab[f].tref = t;
         ftab[f].parnum = 0;
         ftab[f].psize = 0;//TODO:参数及该函数在运行栈S中的内务信息区所占存储单元数
@@ -860,7 +998,7 @@ void constdec()//处理常量声明部分
         }
     }while(1);
 }
-void variabledec()//处理变量声明部分 TODO:还没有登录符号表
+void variabledec()//处理变量声明部分
 {
     if(sym == lbrack)
     {
@@ -885,7 +1023,10 @@ void variabledec()//处理变量声明部分 TODO:还没有登录符号表
     }
     else
     {
-        entertable(variable, lastsy);
+        if(lastsy == intsy)
+			entertable(variable, inttype);
+		else
+			entertable(variable, chartype);
         printf("line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], lastid);
     }
     while(sym == comma)
@@ -918,7 +1059,10 @@ void variabledec()//处理变量声明部分 TODO:还没有登录符号表
             }
             else
             {
-                entertable(variable, lastsy);
+				if(lastsy == intsy)
+					entertable(variable, inttype);
+				else
+					entertable(variable, chartype);
                 printf("line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], id);
             }
         }
@@ -944,22 +1088,35 @@ void variabledec()//处理变量声明部分 TODO:还没有登录符号表
 }
 void returnfctdec()//处理有返回值函数定义
 {
-    printf("line%d.%d 有返回值函数定义分析开始\n", l, cc);
-    entertable(function, lastsy);
+    printf("line%d.%d 有返回值函数%s定义分析开始\n", l, cc, lastid);
+	if(lastsy == intsy)
+		entertable(function, inttype);
+	else
+		entertable(function, chartype);
     parameterlist();
     compoundstatement();
     f++;
+	if(funcvalid == -1)
+	{
+		f--;
+		funcvalid = 0;
+	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
-    printf("line%d.%d 有返回值函数定义分析完成\n", l, cc);
+    printf("line%d.%d 有返回值函数%s定义分析完成\n", l, cc, tab[ftab[f - 1].tref].name);
 }
 void noreturnfctdec()//处理无返回值函数定义
 {
     printf("line%d.%d 无返回值函数定义分析开始\n", l, cc);
-    entertable(function, lastsy);
+	entertable(function, voidtype);
     parameterlist();
     compoundstatement();
     f++;
+	if(funcvalid == -1)
+	{
+		f--;
+		funcvalid = 0;
+	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
     printf("line%d.%d 无返回值函数定义分析完成\n", l, cc);
@@ -978,7 +1135,10 @@ void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
             if(sym == ident)
             {
                 strcpy(lastid, id);
-                entertable(variable, lastsy);
+				if(lastsy == intsy)
+					entertable(variable, inttype);
+				else
+					entertable(variable, chartype);
                 printf("line%d.%d 函数参数：%s %s\n", l, cc, symbolvalue[lastsy], id);
                 getsym();
             }
@@ -1009,7 +1169,7 @@ void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
 }
 void maindec()
 {
-    entertable(function, lastsy);
+	entertable(function, voidtype);
     getsym();
     if(sym != lparent)
     {
@@ -1022,6 +1182,11 @@ void maindec()
     }
     compoundstatement();
     f++;
+	if(funcvalid == -1)
+	{
+		f--;
+		funcvalid = 0;
+	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
     printf("line%d.%d main函数分析完成\n", l, cc);
