@@ -2,7 +2,7 @@
 #include<ctype.h>
 #include<string.h>
 #define ILNGMAX 30 //±êÊ¶·û³¤¶È×î´óÖµ
-#define STRLNGMAX 100 //×Ö·û´®³¤¶È×î´óÖµ
+#define STRINGMAX 200 //×Ö·û´®³¤¶È×î´óÖµ
 #define MAX_DIGIT 9 //int×î´óÎ»Êı
 #define MAX_LINE 200 //×î´óĞĞ³¤¶È
 #define MAX_TAB 2000//±íÏî×î´óÖµ
@@ -11,6 +11,7 @@
 #define MAX_LABEL 1000 //±êÇ©ÊıÁ¿×î´óÖµ
 #define MAX_CODE 20000 //ËÄÔªÊ½ÊıÁ¿×î´óÖµ
 #define MAX_CODE_TYPE 20 //ËÄÔªÊ½ÀàĞÍ×î´ó³¤¶È
+#define MAX_PAR_NUM 10 //º¯Êı²ÎÊı×î´ó¸öÊı
 enum symbol{
     notsy, plus, minus, times, div, becomes,
     eql, neq, gtr, geq, lss, leq,
@@ -29,7 +30,7 @@ enum type{
     inttype, chartype, arraytype, voidtype
 }; //±êÊ¶·ûÀàĞÍ
 enum identtype{
-	array_type, function_other, other, 
+	array_type, function_type, other, 
 	array_int, array_char, function_int, function_char, function_void,
 	constant_int, constant_char, variable_int, variable_char, no_type
 };
@@ -94,6 +95,9 @@ const char errormessage[][50] = {
 	"º¯Êı±íÒç³ö", //35
 	"ÀàĞÍ²»Æ¥Åä»òÎ´¶¨Òå", //36
 	"Êı×éÏÂ±ê±ØĞëÎªintÀàĞÍ", //37
+	"º¯ÊıÊµ²ÎÓëĞÎ²ÎÊıÁ¿»òÀàĞÍ²»·û", //38
+	"ÓĞ·µ»ØÖµº¯Êı²»ÄÜ·µ»Ø¿Õ", //39
+	"ÎŞ·µ»ØÖµº¯ÊıÖ»ÄÜ·µ»Ø¿Õ", //40
 };
 //·ûºÅ±í
 struct table{
@@ -121,8 +125,8 @@ struct functiontable{
 }ftab[MAX_TAB];
 int f;
 //×Ö·û´®³£Á¿±í
-char stab[SMAX];
-int sx;
+char strtable[SMAX][STRINGMAX];
+int stringx;
 
 const int nkw = 13; //±£Áô×Ö¸öÊı
 const char word[13][8] = { //±£Áô×ÖÊı×é
@@ -143,7 +147,7 @@ enum symbol sym; //Ê¶±ğµ½µÄµ¥´ÊÀàĞÍ
 int inum; //Ê¶±ğµ½µÄÊı×Ö
 char c; //Ê¶±ğµ½µÄ×Ö·û
 char id[ILNGMAX+1]; //Ê¶±ğµ½µÄ±êÊ¶·û
-char string[STRLNGMAX+1]; //Ê¶±ğµ½µÄ×Ö·û´®
+char string[STRINGMAX+1]; //Ê¶±ğµ½µÄ×Ö·û´®
 enum symbol lastsy;
 char lastid[ILNGMAX+1];
 int funcvalid;
@@ -162,7 +166,6 @@ int codeindex = 0;
 int tvs_top, lasttvs_top;//º¯Êıµ÷ÓÃ½áÊøºó·µ»ØµÄÁÙÊ±±äÁ¿Ö¸ÕëÎ»ÖÃ
 //Label±í¼°Õ»
 int labx;//labxÎªµ±Ç°ÓÃµ½µÄLabel±íË÷Òı
-int stringx;
 
 char temp_s[ILNGMAX+1];
 char temp_s1[ILNGMAX+1];
@@ -172,6 +175,7 @@ enum identtype lasttype;
 enum type exptype;
 int lasttemp;
 int ifpar;
+int cur_func;
 
 //º¯ÊıÉùÃ÷
 void getch();//»ñÈ¡Ò»¸ö×Ö·û
@@ -201,9 +205,8 @@ void assignment();
 void readstatement();
 void writestatement();
 void returnstatement();
-void returnfctstatement();
-void noreturnfctstatement();
-void valueparalist();
+void callfctstatement();
+int valueparalist();
 void expression();
 void term();
 void factor();
@@ -215,11 +218,12 @@ void printcode();
 int main()
 {
     int i;
-    char sin[FILENAME_MAX] = "14061183_test.txt";
+	errno_t err;
+    char sin[FILENAME_MAX];
     printf("please input source program file name : \n");
-    //scanf("%s", sin);
-    fin = fopen(sin, "r");
-    if(fin == NULL)
+    scanf("%s", sin);
+    err = fopen_s(&fin, sin, "r");
+    if(err != 0)
     {
         printf("Failed to open!\n");
         return 1;
@@ -407,13 +411,13 @@ void getsym()
             case '\"':  sym = stringcon;
                         getch();
                         k = 0;
-                        while(k < STRLNGMAX && ch != '\"' && ch >= 32 && ch <= 126)
+                        while(k < STRINGMAX && ch != '\"' && ch >= 32 && ch <= 126)
                         {
                             string[k++] = ch;
                             getch();
                         }
                         string[k] = '\0';
-                        if(k == STRLNGMAX && ch != '\"' && ch >= 32 && ch <= 126) //×Ö·û´®³¬³¤
+                        if(k == STRINGMAX && ch != '\"' && ch >= 32 && ch <= 126) //×Ö·û´®³¬³¤
                         {
                             error(3);
                             getch();
@@ -604,7 +608,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 			}
 		}
 	}
-	else if(typ == function_other)
+	else if(typ == function_type)
 	{
 		for(i = 0; i <= f; i++)
 		{
@@ -618,28 +622,11 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 				{
 					lasttype = function_int;
 				}
-				else
-				{
-					lasttype = no_type;
-				}
-				return;
-			}
-		}
-	}
-	else if(typ == function_void)
-	{
-		for(i = 0; i <= f; i++)
-		{
-			if(strcmp(tab[ftab[i].tref].name, id_temp) == 0)
-			{
-				if(tab[ftab[i].tref].typ == voidtype)
+				else if(tab[ftab[i].tref].typ == voidtype)
 				{
 					lasttype = function_void;
 				}
-				else
-				{
-					lasttype = no_type;
-				}
+				cur_func = i;
 				return;
 			}
 		}
@@ -848,7 +835,6 @@ void entertable(enum obj object, enum type thetype)
 			//TODO£ºÉú³ÉÊı×é±äÁ¿ÉùÃ÷ËÄÔªÊ½
             t++;
             a++;
-			
         }
         else
         {
@@ -1311,6 +1297,7 @@ void returnfctdec()//´¦ÀíÓĞ·µ»ØÖµº¯Êı¶¨Òå
 		entertable(function, inttype);
 	else
 		entertable(function, chartype);
+	lasttvs_top = tvs_top;
     parameterlist();
     compoundstatement();
     f++;
@@ -1322,11 +1309,13 @@ void returnfctdec()//´¦ÀíÓĞ·µ»ØÖµº¯Êı¶¨Òå
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
     printf("line%d.%d ÓĞ·µ»ØÖµº¯Êı%s¶¨Òå·ÖÎöÍê³É\n", l, cc, tab[ftab[f - 1].tref].name);
+	tvs_top = lasttvs_top;
 }
 void noreturnfctdec()//´¦ÀíÎŞ·µ»ØÖµº¯Êı¶¨Òå
 {
     printf("line%d.%d ÎŞ·µ»ØÖµº¯Êı¶¨Òå·ÖÎö¿ªÊ¼\n", l, cc);
 	entertable(function, voidtype);
+	lasttvs_top = tvs_top;
     parameterlist();
     compoundstatement();
     f++;
@@ -1338,6 +1327,7 @@ void noreturnfctdec()//´¦ÀíÎŞ·µ»ØÖµº¯Êı¶¨Òå
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
     printf("line%d.%d ÎŞ·µ»ØÖµº¯Êı¶¨Òå·ÖÎöÍê³É\n", l, cc);
+	tvs_top = lasttvs_top;
 }
 void parameterlist()//´¦Àíº¯Êı²ÎÊı£¬½«ĞÎ²Î¼°ÆäÓĞ¹ØĞÅÏ¢µÇÂ¼µ½·ûºÅ±íÖĞ
 {
@@ -1389,6 +1379,7 @@ void parameterlist()//´¦Àíº¯Êı²ÎÊı£¬½«ĞÎ²Î¼°ÆäÓĞ¹ØĞÅÏ¢µÇÂ¼µ½·ûºÅ±íÖĞ
 }
 void maindec()
 {
+	lasttvs_top = tvs_top;
 	entertable(function, voidtype);
     getsym();
     if(sym != lparent)
@@ -1410,6 +1401,7 @@ void maindec()
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
     printf("line%d.%d mainº¯Êı·ÖÎöÍê³É\n", l, cc);
+	tvs_top = lasttvs_top;
 }
 void compoundstatement()
 {
@@ -1508,7 +1500,13 @@ void statement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
         }
         else if(sym == lparent)
         {
-            returnfctstatement();
+            ifdefine(lastid, function_type);
+			if(lasttype == no_type)
+			{
+				error(36);
+				return;
+			}
+			callfctstatement();
             if(sym != semicolon)
             {
                 error(26);
@@ -1590,6 +1588,8 @@ void ifstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
         error(22);
     }
     locallabel1 = condition(-1);
+	if(locallabel1 == -1)
+		return;
     if(sym != rparent)
     {
         error(17);
@@ -1627,7 +1627,8 @@ void dostatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     {
         error(22);
     }
-    condition(locallabel);
+    if(condition(locallabel) == -1)
+		return;
     if(sym == rparent)
     {
         printf("line%d.%d do whileÓï¾ä·ÖÎöÍê³É\n", l, cc);
@@ -1640,9 +1641,8 @@ void dostatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 }
 void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 {
-	enum type lefttype;
 	enum symbol localsym;
-	int lefttemp, locallabel1, locallabel2, localnum;
+	int locallabel1, locallabel2, localnum;
 	char localid[ILNGMAX+1], localid1[ILNGMAX+1];
 	getsym();
     if(sym != lparent)
@@ -1684,6 +1684,8 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     }
 	//Ìõ¼ş
     locallabel2 = condition(-1);
+	if(locallabel2 == -1)
+		return;
     if(sym != semicolon)
     {
         error(26);
@@ -1757,7 +1759,7 @@ int condition(int n)//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
     expression();
 	if(lasttype == no_type)
 	{
-		return;
+		return -1;
 	}
 	lefttemp = lasttemp;
     if(sym == eql || sym == neq || sym == gtr
@@ -1805,7 +1807,14 @@ int condition(int n)//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
     }
 	else
 	{
-		
+		if(n == -1)
+		{
+			gen("!=", tempvar(lefttemp, 1), "0", tolabel(labx++));
+		}
+		else
+		{
+			gen("==", tempvar(lefttemp, 1), "0", tolabel(n));
+		}
 	}
     printf("line%d.%d Ìõ¼ş·ÖÎöÍê³É\n", l, cc);
 	return labx - 1;
@@ -1813,7 +1822,7 @@ int condition(int n)//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
 void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 {
     enum type lefttype;
-	int lefttemp, indextemp;
+	int indextemp;
 	char localid[ILNGMAX+1];
 	if(sym == becomes)
     {
@@ -1927,7 +1936,8 @@ void writestatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     getsym();
     if(sym == stringcon)
     {
-        gen("WRITE STRING", "", "", tostring(stringx++));
+        strcpy_s(strtable[stringx], STRINGMAX, string);
+		gen("WRITE STRING", "", "", tostring(stringx++));
 		getsym();
         if(sym == comma)
         {
@@ -1980,16 +1990,31 @@ void returnstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     getsym();
     if(sym == lparent)
     {
-        getsym();
+        if(tab[ftab[f].tref].typ == voidtype)
+		{
+			error(40);
+			return;
+		}
+		getsym();
         expression();
         if(sym != rparent)
         {
             error(17);
         }
+		if(tab[ftab[f].tref].typ == inttype)
+			gen("RETURN INT", "", "", tempvar(lasttemp, 3));
+		else
+			gen("RETURN CHAR", "", "", tempvar(lasttemp, 3));
         getsym();
     }
     else if(sym == semicolon)
     {
+		if(tab[ftab[f].tref].typ != voidtype)
+		{
+			error(39);
+			return;
+		}
+		gen("RETURN VOID", "", "", "");
     }
     else
     {
@@ -1998,25 +2023,64 @@ void returnstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     }
     printf("line%d.%d returnÓï¾ä·ÖÎöÍê³É\n", l, cc);
 }
-void returnfctstatement()//Ô¤¶Áµ½(
+void callfctstatement()//Ô¤¶Áµ½(
 {
-    valueparalist();
+    char localid[ILNGMAX+1];
+	enum identtype localtype;
+	int parnum;
+	localtype = lasttype;
+	strcpy_s(localid, ILNGMAX+1, lastid);
+	parnum = valueparalist();
+	if(parnum == -1)
+	{
+		error(38);
+		return;
+	}
     if(sym != rparent)
     {
         error(17);
     }
+	if(localtype == function_int)
+		gen("CALL INT FUNC", inttoa(parnum), "ret adr", localid);
+	else if(localtype == function_char)
+		gen("CALL CHAR FUNC", inttoa(parnum), "ret adr", localid);
+	else
+		gen("CALL VOID FUNC", inttoa(parnum), "", localid);
     getsym();
     printf("line%d.%d ÓĞ·µ»ØÖµº¯Êıµ÷ÓÃÓï¾ä·ÖÎöÍê³É\n", l, cc);
 }
-void noreturnfctstatement();
-void valueparalist()//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
+int valueparalist()//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
 {
-    do{
+    int cur_tref = ftab[cur_func].tref;
+	int parnum = ftab[cur_func].parnum;
+	int i = 0, listindex = 0;
+	enum type typelist[MAX_PAR_NUM];
+	int lasttemplist[MAX_PAR_NUM];
+	do{
         getsym();
         if(sym == rparent)
-            return;
+            break;
         expression();
+		//ÓÉÓÚintºÍchar¿ÉÒÔÏà»¥×ª»¯£¬ËùÒÔÀàĞÍÎŞĞè¼ì²é
+		typelist[listindex] = exptype;
+		lasttemplist[listindex] = lasttemp;
+		listindex++;
     }while(sym == comma);
+	if(listindex != parnum)
+	{
+		return -1;
+	}
+	else
+	{
+		for(i = 0; i < listindex; i++)
+		{
+			if(typelist[i] == inttype)
+				gen("REAL PAR INT", "", "", tempvar(lasttemplist[i], 3));
+			else
+				gen("REAL PAR CHAR", "", "", tempvar(lasttemplist[i], 3));
+		}
+		return listindex;
+	}
 }
 void expression()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 {
@@ -2155,17 +2219,17 @@ void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
         else if(sym == lparent)
         {
 			//ÅĞ¶ÏÓĞ·µ»ØÖµº¯Êıµ÷ÓÃÊÇ·ñÕıÈ·
-			ifdefine(lastid, function_other);
-			if(lasttype == no_type)
+			ifdefine(lastid, function_type);
+			if(lasttype != function_char && lasttype != function_int)
 			{
 				error(36);
 				return;
 			}
 			localtype = lasttype;
 			strcpy_s(localid, ILNGMAX+1, lastid);
-			returnfctstatement();
+			callfctstatement();
             printf("line%d.%d Òò×ÓÎª<ÓĞ·µ»ØÖµº¯Êıµ÷ÓÃÓï¾ä>µÄĞÎÊ½\n", l, cc);
-			gen("call", localid, "", tempvar(tvs_top, 3));
+			gen("=CALL", localid, "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == function_int)
 				exptype = inttype;

@@ -1,0 +1,70 @@
+const int _aaaaaaaaaaaaa=+1;
+const int b=-1;
+const char ch1='-'; 
+const char ch2='n';
+int result[3000];
+int ressssssssssssssssssssss;
+void pr(int i,int j){
+    if(i==-1)
+    return;
+    if(i)
+    return;
+    j=j+1;
+    i=i-1;
+    printf(result[i]);
+    pr(i,j);    
+} 
+int pr1(int i,int j){
+    if(i==-1)
+    return;
+    if(i)
+    return;
+    j=j+1;
+    i=i-1;
+    printf(result[i]);  
+}
+void prrrrrrrrrrrrrrrrrrrrr(){
+    
+}
+int getNum(){
+    const int x=1;
+    int y;
+    y=0;
+    return (y);
+}
+
+int getZero(){
+    int x;
+    int re;
+    x=1;
+    re=0;
+    return (x-55);
+}
+
+char getChar(){
+    char ch;
+    ch='m';
+    return (ch+1);
+}
+
+void main(){
+    const int max = 6;
+    int testAray3[101],testAray4[101];
+    int testAray5[102];
+    int testvar1;
+    int testvar2,testvar3,pre;
+    char testvar4,testvar5,testvar6,ch3;
+    int n,i,pce,j,length,t;
+    ch3=getChar();
+    result[0]=2;
+    scanf(n,i);
+    i=3;
+    length=getNum();
+    i=length;
+    j=0;
+    printf("start");
+    printf(ch1);
+    printf(ch2);
+    pr(pr1(i,j),pr1(pr1(i+1,i+2),j+1));
+    printf("\",ch3);
+}
