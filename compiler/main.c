@@ -107,6 +107,7 @@ struct table{
     enum type typ;
     int ref;
     int adr;
+	int value;
 }tab[MAX_TAB];
 int t;
 //Êı×é±í
@@ -120,8 +121,7 @@ int a;
 struct functiontable{
     int tref;
     int parnum;
-    int psize;
-    int vsize;
+	int size;
 }ftab[MAX_TAB];
 int f;
 //×Ö·û´®³£Á¿±í
@@ -148,9 +148,10 @@ int inum; //Ê¶±ğµ½µÄÊı×Ö
 char c; //Ê¶±ğµ½µÄ×Ö·û
 char id[ILNGMAX+1]; //Ê¶±ğµ½µÄ±êÊ¶·û
 char string[STRINGMAX+1]; //Ê¶±ğµ½µÄ×Ö·û´®
-enum symbol lastsy;
-char lastid[ILNGMAX+1];
-int funcvalid;
+enum symbol lastsy;//¶Áµ½µÄÉÏÒ»¸ö·ûºÅÀàĞÍ
+char lastid[ILNGMAX+1];//¶Áµ½µÄÉÏÒ»¸ö±êÊ¶·û
+int funcvalid;//º¯ÊıÊÇ·ñÓĞĞ§
+int cur_adr;//³£Á¿ºÍ±äÁ¿µ±Ç°µÄÏà¶ÔµØÖ·
 
 //ËÄÔªÊ½´æ´¢ÇøÓò
 struct code
@@ -175,13 +176,15 @@ enum identtype lasttype;
 enum type exptype;
 int lasttemp;
 int ifpar;
-int cur_func;
+int cur_func;//µ±Ç°º¯ÊıÔÚftab±íÖĞµÄÎ»ÖÃ
+int cur_tabx;//µ±Ç°²éÑ¯±êÊ¶·ûÔÚtab±íÖĞµÄÎ»ÖÃ
 
 //º¯ÊıÉùÃ÷
 void getch();//»ñÈ¡Ò»¸ö×Ö·û
 void error(int n);
 void getsym();
 char* inttoa(int n);
+int atoint(char s[]);
 char* tempvar(int n, int flag);//Éú³ÉÁÙÊ±±äÁ¿
 void gen();//Éú³ÉËÄÔªÊ½
 void ifdefine(char id_temp[], enum identtype typ);
@@ -213,15 +216,16 @@ void factor();
 void print(int n);
 void printtable();
 void printcode();
+void printmipscode();
 
 
 int main()
 {
     int i;
 	errno_t err;
-    char sin[FILENAME_MAX];
+    char sin[FILENAME_MAX] = "14061183_test.txt";
     printf("please input source program file name : \n");
-    scanf("%s", sin);
+    //scanf("%s", sin);
     err = fopen_s(&fin, sin, "r");
     if(err != 0)
     {
@@ -242,9 +246,9 @@ int main()
     program();
     printtable();
 	printcode();
+	printmipscode();
     fclose(fin);
 }
-
 void getch()//»ñÈ¡Ò»¸ö×Ö·û
 {
     if(cc == ll - 1)
@@ -533,6 +537,13 @@ char* inttoa(int n)
 	sprintf_s(temp_s, 10, "%d", n);
 	return temp_s;
 }
+int atoint(char s[])
+{
+	int i, sum = 0;
+	for(i = 0; s[i] != '\0' && isdigit(s[i]); i++)
+		sum = sum * 10 + (s[i] - '0');
+	return sum;
+}
 char* tempvar(int n, int flag)
 {
 	if(flag == 1)
@@ -556,11 +567,45 @@ char* tolabel(int n)
 	sprintf_s(temp_s3, 10, "label%d", n);
 	return temp_s3;
 }
+char* totable(int n, int flag)
+{
+	if(flag == 1)
+	{
+		sprintf_s(temp_s1, 10, "$s%d", n);
+		return temp_s1;
+	}
+	else if(flag == 2)
+	{
+		sprintf_s(temp_s2, 10, "$s%d", n);
+		return temp_s2;
+	}
+	else
+	{
+		sprintf_s(temp_s3, 10, "$s%d", n);
+		return temp_s3;
+	}
+}
+char* tofunc(int n)
+{
+	sprintf_s(temp_s3, 10, "$f%d", n);
+	return temp_s3;
+}
 char* tostring(int n)
 {
 	sprintf_s(temp_s3, 10, "string%d", n);
 	return temp_s3;
 }
+int intfromtabx(char s[])
+{
+	int i, sum = 0;
+	for(i = 2; s[i] != '\0' && isdigit(s[i]); i++)
+	{
+		sum = sum * 10 + (s[i] - '0');
+	}
+	return sum;
+}
+
+
 void gen(char type_temp[], char arg1_temp[], char arg2_temp[], char result_temp[])
 {
 	strcpy_s(codes[codeindex].type, MAX_CODE_TYPE+1, type_temp);
@@ -586,6 +631,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 					lasttype = array_int;
 				else if(atab[tab[i].ref].eltyp == chartype)
 					lasttype = array_char;
+				cur_tabx = i;
 				return;
 			}
 		}
@@ -603,6 +649,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 						lasttype = array_int;
 					else if(atab[tab[i].ref].eltyp == chartype)
 						lasttype = array_char;
+					cur_tabx = i;
 					return;
 				}
 			}
@@ -627,6 +674,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 					lasttype = function_void;
 				}
 				cur_func = i;
+				cur_tabx = i;
 				return;
 			}
 		}
@@ -651,6 +699,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 					lasttype = variable_char;
 				else
 					lasttype = no_type;
+				cur_tabx = i;
 				return;
 			}
 		}
@@ -674,6 +723,7 @@ void ifdefine(char id_temp[], enum identtype typ)//Ö»¼ì²éÊÇ·ñ¶¨Òå¹ıÒÔ¼°ÀàĞÍÊÇ·ñÆ
 						lasttype = variable_char;
 					else
 						lasttype = no_type;
+					cur_tabx = i;
 					return;
 				}
 			}
@@ -777,16 +827,17 @@ void entertable(enum obj object, enum type thetype)
         if(thetype == inttype)
         {
             tab[t].typ = inttype;
-            tab[t].adr = inum;
-			gen("CONST INT", lastid, "", inttoa(inum));
+            tab[t].value = inum;
+			gen("CONST INT", totable(t, 1), "", inttoa(inum));
         }
         else if(thetype == chartype)
         {
             tab[t].typ = chartype;
-            tab[t].adr = c;
-			gen("CONST CHAR", lastid, "", inttoa(c-'\0'));
+            tab[t].value = c;
+			gen("CONST CHAR", totable(t, 1), "", inttoa(c-'\0'));
         }
-		//TODO:Éú³É³£Á¿ÉùÃ÷ËÄÔªÊ½
+		cur_adr += 4;
+		tab[t].adr = cur_adr;
         t++;
     }
     else if(object == variable)
@@ -812,12 +863,12 @@ void entertable(enum obj object, enum type thetype)
             if(lastsy == intsy)
             {
                 atab[a].eltyp = inttype;
-				gen("INT[]", inttoa(inum), "", lastid);
+				gen("INT[]", inttoa(inum), "", totable(t, 3));
             }
             else
             {
                 atab[a].eltyp = chartype;
-				gen("CHAR[]", inttoa(inum), "", lastid);
+				gen("CHAR[]", inttoa(inum), "", totable(t, 3));
             }
             atab[a].tref = t;
             atab[a].high = inum;
@@ -831,8 +882,9 @@ void entertable(enum obj object, enum type thetype)
             tab[t].obj = variable;
             tab[t].typ = arraytype;
             tab[t].ref = a;
-            tab[t].adr = 0;//TODO:±äÁ¿ÔÚÔËĞĞÕ»ÖĞ·ÖÅä´æ´¢µ¥ÔªµÄÏà¶ÔµØÖ·
-			//TODO£ºÉú³ÉÊı×é±äÁ¿ÉùÃ÷ËÄÔªÊ½
+            tab[t].value = 0;
+			cur_adr += inum * 4;
+			tab[t].adr = cur_adr;
             t++;
             a++;
         }
@@ -849,21 +901,22 @@ void entertable(enum obj object, enum type thetype)
 			{
                 tab[t].typ = inttype;
 				if(ifpar == 1)
-					gen("PAR INT", "", "", lastid);
+					gen("PAR INT", "", "", totable(t, 3));
 				else
-					gen("INT", "", "", lastid);
+					gen("INT", "", "", totable(t, 3));
 			}
 			else
 			{
                 tab[t].typ = chartype;
 				if(ifpar == 1)
-					gen("PAR CHAR", "", "", lastid);
+					gen("PAR CHAR", "", "", totable(t, 3));
 				else
-					gen("CHAR", "", "", lastid);
+					gen("CHAR", "", "", totable(t, 3));
 			}
 			tab[t].ref = 0;
-            tab[t].adr = 0;//TODO:±äÁ¿ÔÚÔËĞĞÕ»ÖĞ·ÖÅä´æ´¢µ¥ÔªµÄÏà¶ÔµØÖ·
-            //TODO£ºÉú³É±äÁ¿ÉùÃ÷ËÄÔªÊ½
+			tab[t].value = 0;
+			cur_adr += 4;
+			tab[t].adr = cur_adr;
 			t++;
         }
     }
@@ -887,10 +940,10 @@ void entertable(enum obj object, enum type thetype)
 			funcvalid = -1;
             return;
         }
+		ftab[f].size = 0;
         ftab[f].tref = t;
         ftab[f].parnum = 0;
-        ftab[f].psize = 0;//TODO:²ÎÊı¼°¸Ãº¯ÊıÔÚÔËĞĞÕ»SÖĞµÄÄÚÎñĞÅÏ¢ÇøËùÕ¼´æ´¢µ¥ÔªÊı
-        ftab[f].vsize = 0;//TODO:ËùÕ¼´æ´¢µ¥Ôª×ÜÊı
+		cur_adr = 0;
 
         strcpy_s(tab[t].name, ILNGMAX+1, lastid);
         tab[t].link = 0;
@@ -898,29 +951,22 @@ void entertable(enum obj object, enum type thetype)
         if(lastsy == intsy)
 		{
             tab[t].typ = inttype;
-			gen("INT FUNC", "", "", lastid);
+			gen("INT FUNC", "", "", tofunc(f));
 		}
 		else if(lastsy == charsy)
 		{
             tab[t].typ = chartype;
-			gen("CHAR FUNC", "", "", lastid);
+			gen("CHAR FUNC", "", "", tofunc(f));
 		}
 		else
         {  
 			tab[t].typ = voidtype;
-			gen("VOID FUNC", "", "", lastid);
+			gen("VOID FUNC", "", "", tofunc(f));
 		}
         tab[t].ref = f;
-        tab[t].adr = 0;//TODO:º¯ÊıÏàÓ¦Ä¿±ê´úÂëµÄÈë¿ÚµØÖ·
-        //TODO£ºÉú³Éº¯ÊıÉùÃ÷ËÄÔªÊ½
+        tab[t].adr = 0;
+        tab[t].value = 0;
 		t++;
-		//codes[codeindex].type[0] = 'f';
-		//codes[codeindex].type[1] = 'u';
-		//codes[codeindex].type[2] = 'n';
-		//codes[codeindex].type[3] = 'c';
-		//codes[codeindex].type[4] = '\0';
-		//strcpy_s(codes[codeindex].result, lastid);//Éú³Éº¯Êı±êÇ©ËÄÔªÊ½
-		//codeindex++;
     }
 }
 void program()//´¦Àí×Ü³ÌĞò
@@ -1300,6 +1346,7 @@ void returnfctdec()//´¦ÀíÓĞ·µ»ØÖµº¯Êı¶¨Òå
 	lasttvs_top = tvs_top;
     parameterlist();
     compoundstatement();
+	ftab[f].size = cur_adr;
     f++;
 	if(funcvalid == -1)
 	{
@@ -1318,6 +1365,7 @@ void noreturnfctdec()//´¦ÀíÎŞ·µ»ØÖµº¯Êı¶¨Òå
 	lasttvs_top = tvs_top;
     parameterlist();
     compoundstatement();
+	ftab[f].size = cur_adr;
     f++;
 	if(funcvalid == -1)
 	{
@@ -1392,6 +1440,7 @@ void maindec()
         error(17);
     }
     compoundstatement();
+	ftab[f].size = cur_adr;
     f++;
 	if(funcvalid == -1)
 	{
@@ -1642,8 +1691,7 @@ void dostatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 {
 	enum symbol localsym;
-	int locallabel1, locallabel2, localnum;
-	char localid[ILNGMAX+1], localid1[ILNGMAX+1];
+	int locallabel1, locallabel2, localnum, localtabx, localtabx1;
 	getsym();
     if(sym != lparent)
     {
@@ -1661,7 +1709,7 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 		error(36);
 		return;
 	}
-	strcpy_s(localid, ILNGMAX+1, id);
+	localtabx = cur_tabx;
     getsym();
     if(sym != becomes)
     {
@@ -1673,8 +1721,8 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 	{
 		return;
 	}
-	gen("=", tempvar(lasttemp, 2), "", localid);
-	gen("=", localid, "", tempvar(tvs_top, 3));
+	gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
+	gen("=", totable(localtabx, 3), "", tempvar(tvs_top, 3));
 	lasttemp = tvs_top++;
 	gen("LABEL", "", "", tolabel(labx));
 	locallabel1 = labx++;
@@ -1702,7 +1750,7 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 		error(36);
 		return;
 	}
-	strcpy_s(localid, ILNGMAX+1, id);
+	localtabx = cur_tabx;
     getsym();
     if(sym != becomes)
     {
@@ -1719,7 +1767,7 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 		error(36);
 		return;
 	}
-	strcpy_s(localid1, ILNGMAX+1, id);
+	localtabx1 = cur_tabx;
     getsym();
     if(sym != plus && sym != minus)
     {
@@ -1741,11 +1789,11 @@ void forstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
     statement();
 	if(localsym == plus)
 	{
-		gen("+", localid1, inttoa(localnum), localid);
+		gen("+", totable(localtabx1, 1), inttoa(localnum), totable(localtabx, 3));
 	}
 	else
 	{
-		gen("-", localid1, inttoa(localnum), localid);
+		gen("-", totable(localtabx1, 1), inttoa(localnum), totable(localtabx, 3));
 	}
 	gen("J", "", "", tolabel(locallabel1));
 	gen("LABEL", "", "", tolabel(locallabel2));
@@ -1776,13 +1824,13 @@ int condition(int n)//Ã»ÓĞÔ¤¶Á£¬¶à¶ÁÒ»¸ö
 				break;
 			case neq:gen("==", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
 				break;
-			case gtr:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case gtr:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
 				break;
-			case geq:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case geq:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
 				break;
-			case lss:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case lss:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
 				break;
-			case leq:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case leq:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
 				break;
 			}
 		}
@@ -1823,7 +1871,7 @@ void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 {
     enum type lefttype;
 	int indextemp;
-	char localid[ILNGMAX+1];
+	int localtabx;
 	if(sym == becomes)
     {
 		//ÅĞ¶ÏÎª±äÁ¿¸³ÖµÊÇ·ñÕıÈ·
@@ -1833,7 +1881,7 @@ void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 			error(36);
 			return;
 		}
-		strcpy_s(localid, ILNGMAX+1, lastid);
+		localtabx = cur_tabx;
 		if(lasttype == variable_int)
 			lefttype = inttype;
 		else
@@ -1844,8 +1892,8 @@ void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 		{
 			return;
 		}
-		gen("=", tempvar(lasttemp, 2), "", localid);
-		gen("=", localid, "", tempvar(tvs_top, 3));
+		gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
+		gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
 		lasttemp = tvs_top++;
 		exptype = lefttype;
     }
@@ -1862,7 +1910,7 @@ void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 			lefttype = inttype;
 		else
 			lefttype = chartype;
-		strcpy_s(localid, ILNGMAX+1, lastid);
+		localtabx = cur_tabx;
         getsym();
         expression();
 		//ÕâÀïÖ»ĞèÒª¼ì²é±í´ïÊ½ÀàĞÍÊÇ·ñÊÇint£¬¶ø²»ĞèÒªÅĞ¶ÏÊÇ·ñ³¬³öÊı×éÉÏ½ç
@@ -1887,8 +1935,8 @@ void assignment()//Ô¤¶Áµ½=»ò[£¬¶à¶ÁÒ»¸ö
 		{
 			return;
 		}
-		gen("[]=", localid, tempvar(indextemp, 2), tempvar(lasttemp, 3));
-		gen("=[]", localid, tempvar(indextemp, 2), tempvar(tvs_top, 3));
+		gen("[]=", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(lasttemp, 3));
+		gen("=[]", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(tvs_top, 3));
 		lasttemp = tvs_top++;
 		exptype = lefttype;
     }
@@ -1914,9 +1962,9 @@ void readstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 			return;
 		}
 		if(lasttype == variable_int)
-			gen("READ INT", "", "", id);
+			gen("READ INT", "", "", totable(cur_tabx, 3));
 		else
-			gen("READ CHAR", "", "", id);
+			gen("READ CHAR", "", "", totable(cur_tabx, 3));
         getsym();
     }while(sym == comma);
     if(sym != rparent)
@@ -2025,11 +2073,9 @@ void returnstatement()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 }
 void callfctstatement()//Ô¤¶Áµ½(
 {
-    char localid[ILNGMAX+1];
 	enum identtype localtype;
 	int parnum;
 	localtype = lasttype;
-	strcpy_s(localid, ILNGMAX+1, lastid);
 	parnum = valueparalist();
 	if(parnum == -1)
 	{
@@ -2041,11 +2087,11 @@ void callfctstatement()//Ô¤¶Áµ½(
         error(17);
     }
 	if(localtype == function_int)
-		gen("CALL INT FUNC", inttoa(parnum), "ret adr", localid);
+		gen("CALL INT FUNC", inttoa(parnum), "", tofunc(cur_func));
 	else if(localtype == function_char)
-		gen("CALL CHAR FUNC", inttoa(parnum), "ret adr", localid);
+		gen("CALL CHAR FUNC", inttoa(parnum), "", tofunc(cur_func));
 	else
-		gen("CALL VOID FUNC", inttoa(parnum), "", localid);
+		gen("CALL VOID FUNC", inttoa(parnum), "", tofunc(cur_func));
     getsym();
     printf("line%d.%d ÓĞ·µ»ØÖµº¯Êıµ÷ÓÃÓï¾ä·ÖÎöÍê³É\n", l, cc);
 }
@@ -2176,7 +2222,7 @@ void term()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 {
 	enum identtype localtype;
-	char localid[ILNGMAX+1];
+	int localtabx;
 	if(sym == ident)
     {
 		strcpy_s(lastid, ILNGMAX+1, id);
@@ -2191,7 +2237,7 @@ void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 				return;
 			}
 			localtype = lasttype;
-			strcpy_s(localid, ILNGMAX+1, lastid);
+			localtabx = cur_tabx;
 			getsym();
             expression();
 			//ÕâÀïÖ»ĞèÒª¼ì²é±í´ïÊ½ÀàĞÍÊÇ·ñÊÇint£¬¶ø²»ĞèÒªÅĞ¶ÏÊÇ·ñ³¬³öÊı×éÉÏ½ç
@@ -2208,7 +2254,7 @@ void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
             {
                 error(15);
             }
-			gen("=[]", localid, tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			gen("=[]", totable(localtabx, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == array_int)
 				exptype = inttype;
@@ -2226,10 +2272,9 @@ void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 				return;
 			}
 			localtype = lasttype;
-			strcpy_s(localid, ILNGMAX+1, lastid);
 			callfctstatement();
             printf("line%d.%d Òò×ÓÎª<ÓĞ·µ»ØÖµº¯Êıµ÷ÓÃÓï¾ä>µÄĞÎÊ½\n", l, cc);
-			gen("=CALL", localid, "", tempvar(tvs_top, 3));
+			gen("=CALL", tofunc(cur_func), "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == function_int)
 				exptype = inttype;
@@ -2246,7 +2291,7 @@ void factor()//Ô¤¶ÁÒ»¸ö£¬¶à¶ÁÒ»¸ö
 				return;
 			}
 			printf("line%d.%d Òò×ÓÎª<±êÊ¶·û>µÄĞÎÊ½\n", l, cc);
-			gen("=", lastid, "", tempvar(tvs_top, 3));
+			gen("=", totable(cur_tabx, 1), "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(lasttype == constant_int || lasttype == variable_int)
 				exptype = inttype;
@@ -2334,14 +2379,14 @@ void printtable()
     printf("symbol table\n");
     for(i = 0; i < t; i++)
     {
-        printf("id: %2d   name: %10s link: %4d   obj: %1d   typ: %1d   ref: %2d   adr: %5d\n",
-            i, tab[i].name, tab[i].link, tab[i].obj, tab[i].typ, tab[i].ref, tab[i].adr);
+        printf("id: %2d   name: %10s link: %4d   obj: %1d   typ: %1d   ref: %2d   adr: %5d   value: %5d\n",
+            i, tab[i].name, tab[i].link, tab[i].obj, tab[i].typ, tab[i].ref, tab[i].adr, tab[i].value);
     }
     printf("\n\n\nfunction table\n");
     for(i = 0; i < f; i++)
     {
-        printf("id: %2d   name: %10s   tref: %3d   parnum: %1d\n",
-            i, tab[ftab[i].tref].name, ftab[i].tref, ftab[i].parnum);
+        printf("id: %2d   name: %10s   tref: %3d   parnum: %1d   size: %5d\n",
+            i, tab[ftab[i].tref].name, ftab[i].tref, ftab[i].parnum, ftab[i].size);
     }
     printf("\n\n\narray table\n");
     for(i = 0; i < a; i++)
@@ -2359,4 +2404,63 @@ void printcode()
 		printf("index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
 			codes[i].arg1, codes[i].arg2, codes[i].result);
 	}
+}
+void printmipscode()
+{
+	int i, index;
+	FILE *fout;
+	errno_t err;
+	err = fopen_s(&fout, "mips.txt", "w+");
+	if(err != 0)
+	{
+		printf("open failed!\n");
+		return;
+	}
+	fprintf(fout, ".data\n");
+	fprintf(fout, "temp: .word 0x30000000\n\n");
+	fprintf(fout, ".text\n");
+	fprintf(fout, "lw $t8, temp\n");//$t8´æ´¢ÁÙÊ±±äÁ¿»ùµØÖ·
+	fprintf(fout, "move $t9, $sp\n");//$t9´æ´¢È«¾Ö±äÁ¿µØÖ·
+	fprintf(fout, "subi $fp, $sp, 12\n\n");
+
+	for(i = 0; i < codeindex; i++)
+	{
+		if(strcmp(codes[i].type, "CONST INT") == 0)
+		{
+			index = tab[intfromtabx(codes[i].arg1)].adr;
+			fprintf(fout, "li $t0, %s\n", codes[i].result);
+			fprintf(fout, "sw $t0, -%d($sp)\n", 12 + index);
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else if(strcmp(codes[i].type, "CONST CHAR") == 0)
+		{
+			index = tab[intfromtabx(codes[i].arg1)].adr;
+			fprintf(fout, "li $t0, %s\n", codes[i].result);
+			fprintf(fout, "sw $t0, -%d($sp)\n", 12 + index);
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else if(strcmp(codes[i].type, "INT") == 0)
+		{
+			index = tab[intfromtabx(codes[i].result)].adr;
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else if(strcmp(codes[i].type, "INT[]") == 0)
+		{
+			index = tab[intfromtabx(codes[i].result)].adr;
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else if(strcmp(codes[i].type, "CHAR") == 0)
+		{
+			index = tab[intfromtabx(codes[i].result)].adr;
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else if(strcmp(codes[i].type, "CHAR[]") == 0)
+		{
+			index = tab[intfromtabx(codes[i].result)].adr;
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+		}
+		else
+			break;
+	}
+	fclose(fout);
 }

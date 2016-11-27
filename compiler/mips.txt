@@ -1,0 +1,11 @@
+.data
+.text
+subi $fp, $sp, 12
+$s0: .word 10
+$s1: .word 1
+$s2: .byte '+'
+$s3: .space 400
+$s4: .space 4
+$s5: .space 5
+$s6: .space 1
+$s7: .space 40
