@@ -27,8 +27,6 @@ void main(){
     int arr[10];
     int k,m;
     char az,ba;
-    scanf(k,m);
-    scanf(az,ba);
     arr[2]=3;
     arr[1]=add(arr[2]);
     printf(arr[1]);

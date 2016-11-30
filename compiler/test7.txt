@@ -1,0 +1,13 @@
+const int a = 2;
+int b;
+int fun(int c, int d)
+{
+	return (c+d);
+}
+void main()
+{
+	b = 3;
+	b = fun(a, b);
+	printf(b);
+	return;
+}

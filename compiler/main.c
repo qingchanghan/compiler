@@ -186,6 +186,11 @@ void getsym();
 char* inttoa(int n);
 int atoint(char s[]);
 char* tempvar(int n, int flag);//生成临时变量
+char* tolabel(int n);
+char* totable(int n, int flag);
+char* tofunc(int n);
+char* tostring(int n);
+int intfromtabx(char s[]);
 void gen();//生成四元式
 void ifdefine(char id_temp[], enum identtype typ);
 int findduplicate(enum obj object);
@@ -215,6 +220,7 @@ void term();
 void factor();
 void print(int n);
 void printtable();
+void printstring();
 void printcode();
 void printmipscode();
 
@@ -246,6 +252,7 @@ int main()
     program();
     printtable();
 	printcode();
+	printstring();
 	printmipscode();
     fclose(fin);
 }
@@ -585,10 +592,23 @@ char* totable(int n, int flag)
 		return temp_s3;
 	}
 }
-char* tofunc(int n)
+char* tofunc(int n, int flag)
 {
-	sprintf_s(temp_s3, 10, "$f%d", n);
-	return temp_s3;
+	if(flag == 1)
+	{
+		sprintf_s(temp_s1, 10, "$f%d", n);
+		return temp_s1;
+	}
+	else if(flag == 2)
+	{
+		sprintf_s(temp_s2, 10, "$f%d", n);
+		return temp_s2;
+	}
+	else
+	{
+		sprintf_s(temp_s3, 10, "$f%d", n);
+		return temp_s3;
+	}
 }
 char* tostring(int n)
 {
@@ -598,14 +618,14 @@ char* tostring(int n)
 int intfromtabx(char s[])
 {
 	int i, sum = 0;
+	if(s[0] != '$')
+		return 0;
 	for(i = 2; s[i] != '\0' && isdigit(s[i]); i++)
 	{
 		sum = sum * 10 + (s[i] - '0');
 	}
 	return sum;
 }
-
-
 void gen(char type_temp[], char arg1_temp[], char arg2_temp[], char result_temp[])
 {
 	strcpy_s(codes[codeindex].type, MAX_CODE_TYPE+1, type_temp);
@@ -951,17 +971,17 @@ void entertable(enum obj object, enum type thetype)
         if(lastsy == intsy)
 		{
             tab[t].typ = inttype;
-			gen("INT FUNC", "", "", tofunc(f));
+			gen("INT FUNC", "", "", tofunc(f, 3));
 		}
 		else if(lastsy == charsy)
 		{
             tab[t].typ = chartype;
-			gen("CHAR FUNC", "", "", tofunc(f));
+			gen("CHAR FUNC", "", "", tofunc(f, 3));
 		}
 		else
         {  
 			tab[t].typ = voidtype;
-			gen("VOID FUNC", "", "", tofunc(f));
+			gen("VOID FUNC", "", "", tofunc(f, 3));
 		}
         tab[t].ref = f;
         tab[t].adr = 0;
@@ -1996,9 +2016,9 @@ void writestatement()//预读一个，多读一个
 				return;
 			}
 			if(exptype == inttype)
-				gen("WRTIE INT", "", "", tempvar(lasttemp, 3));
+				gen("WRITE INT", "", "", tempvar(lasttemp, 3));
 			else
-				gen("WRTIE CHAR", "", "", tempvar(lasttemp, 3));
+				gen("WRITE CHAR", "", "", tempvar(lasttemp, 3));
             if(sym != rparent)
             {
                 error(17);
@@ -2022,9 +2042,9 @@ void writestatement()//预读一个，多读一个
 			return;
 		}
 		if(exptype == inttype)
-			gen("WRTIE INT", "", "", tempvar(lasttemp, 3));
+			gen("WRITE INT", "", "", tempvar(lasttemp, 3));
 		else
-			gen("WRTIE CHAR", "", "", tempvar(lasttemp, 3));
+			gen("WRITE CHAR", "", "", tempvar(lasttemp, 3));
         if(sym != rparent)
         {
             error(17);
@@ -2087,11 +2107,11 @@ void callfctstatement()//预读到(
         error(17);
     }
 	if(localtype == function_int)
-		gen("CALL INT FUNC", inttoa(parnum), "", tofunc(cur_func));
+		gen("CALL INT FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
 	else if(localtype == function_char)
-		gen("CALL CHAR FUNC", inttoa(parnum), "", tofunc(cur_func));
+		gen("CALL CHAR FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
 	else
-		gen("CALL VOID FUNC", inttoa(parnum), "", tofunc(cur_func));
+		gen("CALL VOID FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
     getsym();
     printf("line%d.%d 有返回值函数调用语句分析完成\n", l, cc);
 }
@@ -2274,7 +2294,7 @@ void factor()//预读一个，多读一个
 			localtype = lasttype;
 			callfctstatement();
             printf("line%d.%d 因子为<有返回值函数调用语句>的形式\n", l, cc);
-			gen("=CALL", tofunc(cur_func), "", tempvar(tvs_top, 3));
+			gen("=CALL", tofunc(cur_func, 1), "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == function_int)
 				exptype = inttype;
@@ -2395,6 +2415,15 @@ void printtable()
             i, tab[atab[i].tref].name, atab[i].tref, atab[i].eltyp, atab[i].high);
     }
 }
+void printstring()
+{
+	int i;
+	printf("\n\n\n");
+	for(i = 0; i < stringx; i++)
+	{
+		printf("%s\n", strtable[i]);
+	}
+}
 void printcode()
 {
 	int i;
@@ -2407,7 +2436,7 @@ void printcode()
 }
 void printmipscode()
 {
-	int i, index;
+	int i, index, index1, index2, parno = 0, flag = 0, func;
 	FILE *fout;
 	errno_t err;
 	err = fopen_s(&fout, "mips.txt", "w+");
@@ -2417,7 +2446,11 @@ void printmipscode()
 		return;
 	}
 	fprintf(fout, ".data\n");
-	fprintf(fout, "temp: .word 0x30000000\n\n");
+	fprintf(fout, "temp: .word 0x7fff0000\n");
+	for(i = 0; i < stringx; i++)
+	{
+		fprintf(fout, "string%d: .asciiz \"%s\"\n", i, strtable[i]);
+	}
 	fprintf(fout, ".text\n");
 	fprintf(fout, "lw $t8, temp\n");//$t8存储临时变量基地址
 	fprintf(fout, "move $t9, $sp\n");//$t9存储全局变量地址
@@ -2425,42 +2458,485 @@ void printmipscode()
 
 	for(i = 0; i < codeindex; i++)
 	{
-		if(strcmp(codes[i].type, "CONST INT") == 0)
+		if(strcmp(codes[i].type, "CONST INT") == 0 || strcmp(codes[i].type, "CONST CHAR") == 0)
 		{
+			fprintf(fout, "# CONST INT || CONST CHAR\n");
 			index = tab[intfromtabx(codes[i].arg1)].adr;
 			fprintf(fout, "li $t0, %s\n", codes[i].result);
-			fprintf(fout, "sw $t0, -%d($sp)\n", 12 + index);
+			fprintf(fout, "sw $t0, -%d($sp)\n", 8 + index);
 			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
-		else if(strcmp(codes[i].type, "CONST CHAR") == 0)
+		else if(strcmp(codes[i].type, "INT") == 0 || strcmp(codes[i].type, "INT[]") == 0
+			|| strcmp(codes[i].type, "CHAR") == 0 || strcmp(codes[i].type, "CHAR[]") == 0)
 		{
-			index = tab[intfromtabx(codes[i].arg1)].adr;
-			fprintf(fout, "li $t0, %s\n", codes[i].result);
-			fprintf(fout, "sw $t0, -%d($sp)\n", 12 + index);
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
-		}
-		else if(strcmp(codes[i].type, "INT") == 0)
-		{
+			fprintf(fout, "# INT || CHAR\n");
 			index = tab[intfromtabx(codes[i].result)].adr;
 			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
-		else if(strcmp(codes[i].type, "INT[]") == 0)
+		else if(strcmp(codes[i].type, "VOID FUNC") == 0 || strcmp(codes[i].type, "INT FUNC") == 0
+			|| strcmp(codes[i].type, "CHAR FUNC") == 0)
 		{
+			if(flag == 0)
+			{
+				flag = 1;
+				fprintf(fout, "j main\n\n");
+			}
+			fprintf(fout, "# FUNC\n");
+			index = intfromtabx(codes[i].result);
+			func = index;
+			fprintf(fout, "%s:\n", tab[ftab[index].tref].name);
+			if(index != f - 1)
+			{
+				fprintf(fout, "sw $ra, 0($fp)\n");
+				fprintf(fout, "sw $sp, -4($fp)\n");
+				fprintf(fout, "move $sp, $fp\n");
+				fprintf(fout, "subi $fp, $fp, 12\n");
+			}
+		}
+		else if(strcmp(codes[i].type, "PAR INT") == 0 || strcmp(codes[i].type, "PAR CHAR") == 0)
+		{
+			fprintf(fout, "# PAR INT || PAR CHAR\n");
 			index = tab[intfromtabx(codes[i].result)].adr;
 			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
-		else if(strcmp(codes[i].type, "CHAR") == 0)
+		else if(strcmp(codes[i].type, "=") == 0)
 		{
-			index = tab[intfromtabx(codes[i].result)].adr;
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+			fprintf(fout, "# = \n");
+			index = intfromtabx(codes[i].arg1);
+			index1 = intfromtabx(codes[i].result);
+			if(codes[i].arg1[0] != '$')
+			{
+				fprintf(fout, "li $t0, %s\n", codes[i].arg1);
+			}
+			else if(codes[i].arg1[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+				
+			}
+			else if(codes[i].arg1[1] == 't')
+			{
+				fprintf(fout, "lw $t0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			if(codes[i].result[1] == 's')
+			{
+				if(index1 < ftab[0].tref)
+				{
+					fprintf(fout, "sw $t0, -%d($t9)\n", 8 + tab[index1].adr);
+				}
+				else
+				{
+					fprintf(fout, "sw $t0, -%d($sp)\n", 8 + tab[index1].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "sw $t0, %d($t8)\n", index1 * 4 > 0 ? -4 * index1 : 0);
+			}
 		}
-		else if(strcmp(codes[i].type, "CHAR[]") == 0)
+		else if(strcmp(codes[i].type, "[]=") == 0)//a[n] = t
 		{
-			index = tab[intfromtabx(codes[i].result)].adr;
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
+			fprintf(fout, "# []=\n");
+			index = intfromtabx(codes[i].arg1);
+			index1 = intfromtabx(codes[i].arg2);
+			index2 = intfromtabx(codes[i].result);
+			//读取t
+			if(codes[i].result[1] == 's')
+			{
+				if(index2 < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index2].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index2].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "lw $t0, %d($t8)\n", index2 * 4 > 0 ? -4 * index2 : 0);
+			}
+			//读取n
+			if(codes[i].arg2[1] == 's')
+			{
+				if(index1 < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t1, -%d($t9)\n", 8 + tab[index1].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t1, -%d($sp)\n", 8 + tab[index1].adr);
+				}
+			}
+			else if(codes[i].arg2[1] == 't')
+			{
+				fprintf(fout, "lw $t1, %d($t8)\n", index1 * 4 > 0 ? -4 * index1 : 0);
+			}
+			fprintf(fout, "sll $t1,$t1,2\n");//n * 4
+			//$t2存数组a的地址
+			if(index < ftab[0].tref)
+			{
+				fprintf(fout, "subi $t2, $t9, %d\n", 8 + tab[index].adr);
+			}
+			else
+			{
+				fprintf(fout, "subi $t2, $sp, %d\n", 8 + tab[index1].adr);
+			}
+			fprintf(fout, "sub $t2, $t2, $t1\n");//此时$t2存有a[n]地址
+			fprintf(fout, "sw $t0, 0($t2)\n");
 		}
-		else
-			break;
+		else if(strcmp(codes[i].type, "=[]") == 0)//t = a[n]
+		{
+			fprintf(fout, "# =[]\n");
+			index = intfromtabx(codes[i].arg1);
+			index1 = intfromtabx(codes[i].arg2);
+			index2 = intfromtabx(codes[i].result);
+			//读取n
+			if(codes[i].arg2[1] == 's')
+			{
+				if(index1 < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t1, -%d($t9)\n", 8 + tab[index1].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t1, -%d($sp)\n", 8 + tab[index1].adr);
+				}
+			}
+			else if(codes[i].arg2[1] == 't')
+			{
+				fprintf(fout, "lw $t1, %d($t8)\n", index1 * 4 > 0 ? -4 * index1 : 0);
+			}
+			fprintf(fout, "sll $t1,$t1,2\n");//n * 4
+			//$t2存数组a的地址
+			if(index < ftab[0].tref)
+			{
+				fprintf(fout, "subi $t2, $t9, %d\n", 8 + tab[index].adr);
+			}
+			else
+			{
+				fprintf(fout, "subi $t2, $sp, %d\n", 8 + tab[index1].adr);
+			}
+			fprintf(fout, "sub $t2, $t2, $t1\n");//此时$t2存有a[n]地址
+			fprintf(fout, "lw $t0, 0($t2)\n");
+			//给t赋值
+			if(codes[i].result[1] == 's')
+			{
+				if(index2 < ftab[0].tref)
+				{
+					fprintf(fout, "sw $t0, -%d($t9)\n", 8 + tab[index2].adr);
+				}
+				else
+				{
+					fprintf(fout, "sw $t0, -%d($sp)\n", 8 + tab[index2].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "sw $t0, %d($t8)\n", index2 * 4 > 0 ? -4 * index2 : 0);
+			}
+		}
+		else if(strcmp(codes[i].type, "+") == 0 || strcmp(codes[i].type, "-") == 0
+			|| strcmp(codes[i].type, "*") == 0 || strcmp(codes[i].type, "/") == 0)
+		{
+			fprintf(fout, "# + - * /\n");
+			index = intfromtabx(codes[i].arg1);
+			index1 = intfromtabx(codes[i].arg2);
+			index2 = intfromtabx(codes[i].result);
+			if(codes[i].arg1[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+			}
+			else if(codes[i].arg1[1] == 't')
+			{
+				fprintf(fout, "lw $t0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			if(codes[i].arg2[1] == 's')
+			{
+				if(index1 < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t1, -%d($t9)\n", 8 + tab[index1].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t1, -%d($sp)\n", 8 + tab[index1].adr);
+				}
+
+			}
+			else if(codes[i].arg2[1] == 't')
+			{
+				fprintf(fout, "lw $t1, %d($t8)\n", index1 * 4 > 0 ? -4 * index1 : 0);
+			}
+			if(strcmp(codes[i].type, "+") == 0)
+			{
+				fprintf(fout, "add $t2, $t0, $t1\n");
+			}
+			else if(strcmp(codes[i].type, "-") == 0)
+			{
+				fprintf(fout, "sub $t2, $t0, $t1\n");
+			}
+			else if(strcmp(codes[i].type, "*") == 0)
+			{
+				fprintf(fout, "mul $t2, $t0, $t1\n");
+			}
+			else if(strcmp(codes[i].type, "/") == 0)
+			{
+				fprintf(fout, "div $t2, $t0, $t1\n");
+			}
+			if(codes[i].result[1] == 's')
+			{
+				if(index2 < ftab[0].tref)
+				{
+					fprintf(fout, "sw $t2, -%d($t9)\n", 8 + tab[index2].adr);
+				}
+				else
+				{
+					fprintf(fout, "sw $t2, -%d($sp)\n", 8 + tab[index2].adr);
+				}
+
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "sw $t2, %d($t8)\n", index2 * 4 > 0 ? -4 * index2 : 0);
+			}
+		}
+		else if(strcmp(codes[i].type, "<") == 0 || strcmp(codes[i].type, "<=") == 0
+			|| strcmp(codes[i].type, ">") == 0 || strcmp(codes[i].type, ">=") == 0
+			|| strcmp(codes[i].type, "==") == 0 || strcmp(codes[i].type, "!=") == 0)
+		{
+			fprintf(fout, "# compare\n");
+			index = intfromtabx(codes[i].arg1);
+			index1 = intfromtabx(codes[i].arg2);
+			if(codes[i].arg1[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+
+			}
+			else if(codes[i].arg1[1] == 't')
+			{
+				fprintf(fout, "lw $t0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			if(codes[i].arg2[1] == 's')
+			{
+				if(index1 < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t1, -%d($t9)\n", 8 + tab[index1].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t1, -%d($sp)\n", 8 + tab[index1].adr);
+				}
+			}
+			else if(codes[i].arg2[1] == 't')
+			{
+				fprintf(fout, "lw $t1, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			if(strcmp(codes[i].type, "<") == 0)
+			{
+				fprintf(fout, "blt $t0, $t1, %s\n", codes[i].result);
+			}
+			else if(strcmp(codes[i].type, "<=") == 0)
+			{
+				fprintf(fout, "ble $t0, $t1, %s\n", codes[i].result);
+			}
+			else if(strcmp(codes[i].type, ">") == 0)
+			{
+				fprintf(fout, "bgt $t0, $t1, %s\n", codes[i].result);
+			}
+			else if(strcmp(codes[i].type, ">=") == 0)
+			{
+				fprintf(fout, "bge $t0, $t1, %s\n", codes[i].result);
+			}
+			else if(strcmp(codes[i].type, "==") == 0)
+			{
+				fprintf(fout, "beq $t0, $t1, %s\n", codes[i].result);
+			}
+			else if(strcmp(codes[i].type, "!=") == 0)
+			{
+				fprintf(fout, "bne $t0, $t1, %s\n", codes[i].result);
+			}
+		}
+		else if(strcmp(codes[i].type, "J") == 0)
+		{
+			fprintf(fout, "# j\n");
+			fprintf(fout, "j %s\n", codes[i].result);
+		}
+		else if(strcmp(codes[i].type, "LABEL") == 0)
+		{
+			fprintf(fout, "# label\n");
+			fprintf(fout, "%s:\n", codes[i].result);
+		}
+		else if(strcmp(codes[i].type, "REAL PAR INT") == 0
+			|| strcmp(codes[i].type, "REAL PAR CHAR") == 0)
+		{
+			fprintf(fout, "# real par\n");
+			index = intfromtabx(codes[i].result);
+			if(codes[i].result[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "lw $t0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			fprintf(fout, "sw $t0, -%d($fp)\n", 12 + parno * 4);
+			parno++;
+		}
+		else if(strcmp(codes[i].type, "CALL VOID FUNC") == 0
+			|| strcmp(codes[i].type, "CALL INT FUNC") == 0
+			|| strcmp(codes[i].type, "CALL CHAR FUNC") == 0)
+		{
+			fprintf(fout, "# call function\n");
+			parno = 0;
+			index = intfromtabx(codes[i].result);
+			fprintf(fout, "jal %s\n", tab[ftab[index].tref].name);
+		}
+		else if(strcmp(codes[i].type, "=CALL") == 0)
+		{
+			fprintf(fout, "# =call\n");
+			index = intfromtabx(codes[i].result);
+			if(codes[i].result[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "sw $v0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "sw $v0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "sw $v0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+		}
+		else if(strcmp(codes[i].type, "RETURN INT") == 0
+			|| strcmp(codes[i].type, "RETURN CHAR") == 0
+			|| strcmp(codes[i].type, "RETURN VOID") == 0)
+		{
+			fprintf(fout, "\n");
+			fprintf(fout, "# RETURN\n");
+			if(strcmp(codes[i].type, "RETURN VOID") != 0)
+			{
+				index = intfromtabx(codes[i].result);
+				if(codes[i].result[1] == 's')
+				{
+					if(index < ftab[0].tref)
+					{
+						fprintf(fout, "lw $t0, -%d($t9)\n", 8 + tab[index].adr);
+					}
+					else
+					{
+						fprintf(fout, "lw $t0, -%d($sp)\n", 8 + tab[index].adr);
+					}
+				}
+				else if(codes[i].result[1] == 't')
+				{
+					fprintf(fout, "lw $t0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+				}
+				fprintf(fout, "sw $t0, -8($sp)\n");
+			}
+			if(func != f - 1)
+			{
+				fprintf(fout, "move $fp, $sp\n");
+				fprintf(fout, "lw $v0, -8($sp)\n");
+				fprintf(fout, "lw $ra, 0($sp)\n");
+				fprintf(fout, "lw $sp, -4($sp)\n");
+				fprintf(fout, "jr $ra\n");
+			}
+		}
+		else if(strcmp(codes[i].type, "WRITE INT") == 0
+			|| strcmp(codes[i].type, "WRITE CHAR") == 0)
+		{
+			fprintf(fout, "# WRITE\n");
+			index = intfromtabx(codes[i].result);
+			if(codes[i].result[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "lw $a0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "lw $a0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "lw $a0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+			if(strcmp(codes[i].type, "WRITE INT") == 0)
+				fprintf(fout, "li $v0, 1\n");
+			else
+				fprintf(fout, "li $v0, 11\n");
+			fprintf(fout, "syscall\n");
+		}
+		else if(strcmp(codes[i].type, "READ INT") == 0
+			|| strcmp(codes[i].type, "READ CHAR") == 0)
+		{
+			fprintf(fout, "# READ\n");
+			if(strcmp(codes[i].type, "READ_INT") == 0)
+			{
+				fprintf(fout, "li $v0, 5\n");
+			}
+			else
+			{
+				fprintf(fout, "li $v0, 12\n");
+			}
+			fprintf(fout, "syscall\n");
+			index = intfromtabx(codes[i].result);
+			if(codes[i].result[1] == 's')
+			{
+				if(index < ftab[0].tref)
+				{
+					fprintf(fout, "sw $v0, -%d($t9)\n", 8 + tab[index].adr);
+				}
+				else
+				{
+					fprintf(fout, "sw $v0, -%d($sp)\n", 8 + tab[index].adr);
+				}
+			}
+			else if(codes[i].result[1] == 't')
+			{
+				fprintf(fout, "sw $v0, %d($t8)\n", index * 4 > 0 ? -4 * index : 0);
+			}
+		}
+		else if(strcmp(codes[i].type, "WRITE STRING") == 0)
+		{
+			fprintf(fout, "# WRITE STRING\n");
+			fprintf(fout, "la $a0, %s\n", codes[i].result);
+			fprintf(fout, "li $v0, 4\n");
+			fprintf(fout, "syscall\n");
+		}
+		fprintf(fout, "\n");
 	}
 	fclose(fout);
 }
