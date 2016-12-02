@@ -1,7 +1,4 @@
 int fib(int n){
-	printf("|");
-	printf(n);
-	printf("|");
     if(n==1){
         return(1);
     }

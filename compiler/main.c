@@ -94,7 +94,7 @@ const char errormessage[][50] = {
 	"数组信息向量表溢出", //34
 	"函数表溢出", //35
 	"类型不匹配或未定义", //36
-	"数组下标必须为int类型", //37
+	"数组下标必须为int类型", //37 删除此错误 数组下标可以为char类型
 	"函数实参与形参数量或类型不符", //38
 	"有返回值函数不能返回空", //39
 	"无返回值函数只能返回空", //40
@@ -230,9 +230,9 @@ int main()
 {
     int i;
 	errno_t err;
-    char sin[FILENAME_MAX] = "14061183_test.txt";
+    char sin[FILENAME_MAX];
     printf("please input source program file name : \n");
-    //scanf("%s", sin);
+    scanf("%s", sin);
     err = fopen_s(&fin, sin, "r");
     if(err != 0)
     {
@@ -1746,8 +1746,8 @@ void forstatement()//预读一个，多读一个
 		return;
 	}
 	gen("=", tempvar(lasttemp, 1), "", totable(localtabx, 3));
-	gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
-	lasttemp = tvs_top++;
+	//gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
+	//lasttemp = tvs_top++;
 	gen("LABEL", "", "", tolabel(labx));
 	locallabel1 = labx++;
     if(sym != semicolon)
@@ -1917,8 +1917,8 @@ void assignment()//预读到=或[，多读一个
 			return;
 		}
 		gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
-		gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
-		lasttemp = tvs_top++;
+		//gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
+		//lasttemp = tvs_top++;
 		exptype = lefttype;
     }
     else if(sym == lbrack)
@@ -1937,12 +1937,6 @@ void assignment()//预读到=或[，多读一个
 		localtabx = cur_tabx;
         getsym();
         expression();
-		//这里只需要检查表达式类型是否是int，而不需要判断是否超出数组上界
-		if(exptype != inttype)
-		{
-			error(37);
-			return;
-		}
         if(sym != rbrack)
         {
             error(15);
@@ -1960,8 +1954,8 @@ void assignment()//预读到=或[，多读一个
 			return;
 		}
 		gen("[]=", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(lasttemp, 3));
-		gen("=[]", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(tvs_top, 3));
-		lasttemp = tvs_top++;
+		//gen("=[]", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(tvs_top, 3));
+		//lasttemp = tvs_top++;
 		exptype = lefttype;
     }
     printf("line%d.%d 赋值语句分析完成\n", l, cc);
@@ -2267,12 +2261,6 @@ void factor()//预读一个，多读一个
 			localtabx = cur_tabx;
 			getsym();
             expression();
-			//这里只需要检查表达式类型是否是int，而不需要判断是否超出数组上界
-			if(exptype != inttype)
-			{
-				error(37);
-				return;
-			}
             if(sym == rbrack)
             {
                 printf("line%d.%d 因子为<标识符>[<表达式>]的形式\n", l, cc);
