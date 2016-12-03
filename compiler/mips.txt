@@ -1,63 +1,57 @@
 .data
 temp: .word 0x7fff0000
-string0: .asciiz "OVE "
-string1: .asciiz " TO "
-string2: .asciiz " "
-string3: .asciiz "RETURN ERROR"
-string4: .asciiz "NO"
-string5: .asciiz ":"
-string6: .asciiz ""
-string7: .asciiz "IFCORRECT"
-string8: .asciiz ">="
-string9: .asciiz "ERROR"
+writechar: .asciiz "write char out of range"
+string0: .asciiz "fun: gbi:"
+string1: .asciiz "|"
+string2: .asciiz "fun: c:"
+string3: .asciiz "fun2: gbinta:"
+string4: .asciiz "fun2: c: no such variable|"
+string5: .asciiz "fun3: return a|"
+string6: .asciiz ","
+string7: .asciiz "n1 >= MAX|"
+string8: .asciiz "n2 != MIN|"
+string9: .asciiz "fun1: gbi:"
+string10: .asciiz "n3 <= M_MAX|"
+string11: .asciiz "fun3: C1:"
+string12: .asciiz "direct:"
+string13: .asciiz "n4 <= M_MIN|"
+string14: .asciiz "c1 and C1 are not equal.|"
+string15: .asciiz "2 is true.|"
+string16: .asciiz "0 is true.|"
+string17: .asciiz "0 is false.|"
+string18: .asciiz "c5 - c1 is true.|"
+string19: .asciiz "c5 - c1 is false.|"
 .text
 lw $t8, temp
 move $t9, $sp
 subi $fp, $sp, 12
 
 # CONST INT || CONST CHAR
-li $t0, 1
+li $t0, 23
 sw $t0, -12($sp)
 subi $fp, $sp, 16
 
 # CONST INT || CONST CHAR
-li $t0, 2
+li $t0, 10
 sw $t0, -16($sp)
 subi $fp, $sp, 20
 
 # CONST INT || CONST CHAR
-li $t0, 3
+li $t0, 43
 sw $t0, -20($sp)
 subi $fp, $sp, 24
 
-# CONST INT || CONST CHAR
-li $t0, 4
-sw $t0, -24($sp)
-subi $fp, $sp, 28
-
-# CONST INT || CONST CHAR
-li $t0, 5
-sw $t0, -28($sp)
-subi $fp, $sp, 32
-
-# CONST INT || CONST CHAR
-li $t0, 6
-sw $t0, -32($sp)
-subi $fp, $sp, 36
-
-# CONST INT || CONST CHAR
-li $t0, 7
-sw $t0, -36($sp)
-subi $fp, $sp, 40
+# INT || CHAR
+subi $fp, $sp, 424
 
 # INT || CHAR
-subi $fp, $sp, 80
+subi $fp, $sp, 428
 
 # INT || CHAR
-subi $fp, $sp, 84
+subi $fp, $sp, 448
 
 # INT || CHAR
-subi $fp, $sp, 88
+subi $fp, $sp, 452
 
 jal main
 
@@ -66,93 +60,19 @@ li $v0, 10
 syscall
 
 # FUNC
-emptyfunc:
+fun:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
 subi $fp, $fp, 12
 sw $t8, 0($s7)
 move $t8, $s7
-subi $s7, $t8, 4
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-emptyfunc2:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 4
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-testchar:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 8
-
-# = 
-li $t0, 48
-sw $t0, -4($t8)
-
-
-# RETURN
-lw $t0, -4($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-fibonacci:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 72
+subi $s7, $t8, 52
 
 # PAR INT || PAR CHAR
 subi $fp, $sp, 16
 
-# CONST INT || CONST CHAR
-li $t0, -1
-sw $t0, -16($sp)
+# PAR INT || PAR CHAR
 subi $fp, $sp, 20
 
 # INT || CHAR
@@ -163,51 +83,44 @@ lw $t0, -12($sp)
 sw $t0, -4($t8)
 
 # = 
-li $t0, 1
-sw $t0, -8($t8)
-
-# compare
 lw $t0, -4($t8)
-lw $t1, -8($t8)
-bne $t0, $t1, label0
+sw $t0, -424($t9)
 
 # = 
-li $t0, 1
-sw $t0, -12($t8)
+lw $t0, -12($sp)
+sw $t0, -8($t8)
 
-
-# RETURN
-lw $t0, -12($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
+# = 
+lw $t0, -8($t8)
+sw $t0, -20($sp)
 
 # label
 label0:
 
 # = 
-lw $t0, -12($sp)
+lw $t0, -20($sp)
+sw $t0, -12($t8)
+
+# = 
+li $t0, 1
 sw $t0, -16($t8)
 
-# = 
-li $t0, 2
-sw $t0, -20($t8)
-
-# compare
-lw $t0, -16($t8)
-lw $t1, -20($t8)
-beq $t0, $t1, label1
+# + - * /
+lw $t0, -12($t8)
+lw $t1, -16($t8)
+add $t2, $t0, $t1
+sw $t2, -20($t8)
 
 # = 
-lw $t0, -12($sp)
+lw $t0, -20($t8)
+sw $t0, -20($sp)
+
+# = 
+lw $t0, -424($t9)
 sw $t0, -24($t8)
 
 # = 
-li $t0, -1
+lw $t0, -20($sp)
 sw $t0, -28($t8)
 
 # + - * /
@@ -216,59 +129,143 @@ lw $t1, -28($t8)
 add $t2, $t0, $t1
 sw $t2, -32($t8)
 
-# real par
+# = 
 lw $t0, -32($t8)
-sw $t0, -12($fp)
+sw $t0, -424($t9)
 
-# call function
-jal fibonacci
-
-# =call
-sw $v0, -36($t8)
+# WRITE STRING
+la $a0, string0
+li $v0, 4
+syscall
 
 # = 
-lw $t0, -12($sp)
+lw $t0, -424($t9)
+sw $t0, -36($t8)
+
+# WRITE
+lw $a0, -36($t8)
+li $v0, 1
+syscall
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
+# = 
+lw $t0, -20($sp)
 sw $t0, -40($t8)
 
 # = 
-li $t0, 2
+lw $t0, -12($t9)
 sw $t0, -44($t8)
 
-# + - * /
+# compare
 lw $t0, -40($t8)
 lw $t1, -44($t8)
-sub $t2, $t0, $t1
-sw $t2, -48($t8)
+blt $t0, $t1, label0
 
-# real par
-lw $t0, -48($t8)
-sw $t0, -12($fp)
-
-# call function
-jal fibonacci
-
-# =call
-sw $v0, -52($t8)
-
-# + - * /
-lw $t0, -36($t8)
-lw $t1, -52($t8)
-add $t2, $t0, $t1
-sw $t2, -56($t8)
+# WRITE STRING
+la $a0, string2
+li $v0, 4
+syscall
 
 # = 
-li $t0, 0
-sw $t0, -60($t8)
+lw $t0, -16($sp)
+sw $t0, -48($t8)
 
-# + - * /
-lw $t0, -56($t8)
-lw $t1, -60($t8)
-add $t2, $t0, $t1
-sw $t2, -64($t8)
+# WRITE
+lw $a0, -48($t8)
+li $v0, 11
+syscall
+bge $a0, 128, charlabel0
+j charlabel1
+charlabel0:
+la $a0, writechar
+li $v0, 4
+syscall
+charlabel1:
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
 
 
 # RETURN
-lw $t0, -64($t8)
+lw $t8, 0($t8)
+move $fp, $sp
+lw $v0, -8($sp)
+lw $ra, 0($sp)
+lw $sp, -4($sp)
+jr $ra
+
+# FUNC
+fun1:
+sw $ra, 0($fp)
+sw $sp, -4($fp)
+move $sp, $fp
+subi $fp, $fp, 12
+sw $t8, 0($s7)
+move $t8, $s7
+subi $s7, $t8, 40
+
+# PAR INT || PAR CHAR
+subi $fp, $sp, 16
+
+# INT || CHAR
+subi $fp, $sp, 20
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -4($t8)
+
+# = 
+lw $t0, -12($t9)
+sw $t0, -8($t8)
+
+# compare
+lw $t0, -4($t8)
+lw $t1, -8($t8)
+bge $t0, $t1, label1
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -12($t8)
+
+# = 
+li $t0, 1
+sw $t0, -16($t8)
+
+# + - * /
+lw $t0, -12($t8)
+lw $t1, -16($t8)
+add $t2, $t0, $t1
+sw $t2, -20($t8)
+
+# real par
+lw $t0, -20($t8)
+sw $t0, -12($fp)
+
+# call function
+jal fun1
+
+# =call
+sw $v0, -24($t8)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -28($t8)
+
+# + - * /
+lw $t0, -24($t8)
+lw $t1, -28($t8)
+add $t2, $t0, $t1
+sw $t2, -32($t8)
+
+
+# RETURN
+lw $t0, -32($t8)
 sw $t0, -8($sp)
 lw $t8, 0($t8)
 move $fp, $sp
@@ -281,12 +278,12 @@ jr $ra
 label1:
 
 # = 
-li $t0, 1
-sw $t0, -68($t8)
+lw $t0, -12($sp)
+sw $t0, -36($t8)
 
 
 # RETURN
-lw $t0, -68($t8)
+lw $t0, -36($t8)
 sw $t0, -8($sp)
 lw $t8, 0($t8)
 move $fp, $sp
@@ -305,14 +302,201 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-move:
+fun2:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
 subi $fp, $fp, 12
 sw $t8, 0($s7)
 move $t8, $s7
-subi $s7, $t8, 16
+subi $s7, $t8, 60
+
+# CONST INT || CONST CHAR
+li $t0, 5
+sw $t0, -12($sp)
+subi $fp, $sp, 16
+
+# INT || CHAR
+subi $fp, $sp, 20
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -4($t8)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -8($t8)
+
+# + - * /
+lw $t0, -4($t8)
+lw $t1, -8($t8)
+mul $t2, $t0, $t1
+sw $t2, -12($t8)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -16($t8)
+
+# + - * /
+lw $t0, -12($t8)
+lw $t1, -16($t8)
+div $t2, $t0, $t1
+sw $t2, -20($t8)
+
+# = 
+lw $t0, -20($t8)
+sw $t0, -424($t9)
+
+# = 
+lw $t0, -424($t9)
+sw $t0, -24($t8)
+
+# = 
+lw $t0, -424($t9)
+sw $t0, -28($t8)
+
+# + - * /
+lw $t0, -24($t8)
+lw $t1, -28($t8)
+sub $t2, $t0, $t1
+sw $t2, -32($t8)
+
+# = 
+lw $t0, -32($t8)
+sw $t0, -16($sp)
+
+# label
+label2:
+
+# = 
+lw $t0, -16($sp)
+sw $t0, -36($t8)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -40($t8)
+
+# compare
+lw $t0, -36($t8)
+lw $t1, -40($t8)
+bge $t0, $t1, label3
+
+# = 
+lw $t0, -16($sp)
+sw $t0, -44($t8)
+
+# = 
+lw $t0, -16($sp)
+sw $t0, -48($t8)
+
+# []=
+lw $t0, -48($t8)
+lw $t1, -44($t8)
+sll $t1,$t1,2
+subi $t2, $t9, 24
+sub $t2, $t2, $t1
+sw $t0, 0($t2)
+
+# WRITE STRING
+la $a0, string3
+li $v0, 4
+syscall
+
+# = 
+lw $t0, -16($sp)
+sw $t0, -52($t8)
+
+# =[]
+lw $t1, -52($t8)
+sll $t1,$t1,2
+subi $t2, $t9, 24
+sub $t2, $t2, $t1
+lw $t0, 0($t2)
+sw $t0, -56($t8)
+
+# WRITE
+lw $a0, -56($t8)
+li $v0, 1
+syscall
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
+# + - * /
+lw $t0, -16($sp)
+addi $t2, $t0, 1
+sw $t2, -16($sp)
+
+# j
+j label2
+
+# label
+label3:
+
+# WRITE STRING
+la $a0, string4
+li $v0, 4
+syscall
+
+
+# RETURN
+lw $t8, 0($t8)
+move $fp, $sp
+lw $v0, -8($sp)
+lw $ra, 0($sp)
+lw $sp, -4($sp)
+jr $ra
+
+# FUNC
+fun3:
+sw $ra, 0($fp)
+sw $sp, -4($fp)
+move $sp, $fp
+subi $fp, $fp, 12
+sw $t8, 0($s7)
+move $t8, $s7
+subi $s7, $t8, 8
+
+# WRITE STRING
+la $a0, string5
+li $v0, 4
+syscall
+
+# = 
+li $t0, 97
+sw $t0, -4($t8)
+
+
+# RETURN
+lw $t0, -4($t8)
+sw $t0, -8($sp)
+lw $t8, 0($t8)
+move $fp, $sp
+lw $v0, -8($sp)
+lw $ra, 0($sp)
+lw $sp, -4($sp)
+jr $ra
+
+
+# RETURN
+lw $t8, 0($t8)
+move $fp, $sp
+lw $v0, -8($sp)
+lw $ra, 0($sp)
+lw $sp, -4($sp)
+jr $ra
+
+# FUNC
+fun4:
+sw $ra, 0($fp)
+sw $sp, -4($fp)
+move $sp, $fp
+subi $fp, $fp, 12
+sw $t8, 0($s7)
+move $t8, $s7
+subi $s7, $t8, 36
 
 # PAR INT || PAR CHAR
 subi $fp, $sp, 16
@@ -320,37 +504,160 @@ subi $fp, $sp, 16
 # PAR INT || PAR CHAR
 subi $fp, $sp, 20
 
-# CONST INT || CONST CHAR
-li $t0, 1
-sw $t0, -20($sp)
+# INT || CHAR
 subi $fp, $sp, 24
 
-# CONST INT || CONST CHAR
-li $t0, 49
-sw $t0, -24($sp)
+# INT || CHAR
 subi $fp, $sp, 28
 
 # = 
-li $t0, 77
+li $t0, 0
 sw $t0, -4($t8)
 
+# = 
+lw $t0, -4($t8)
+sw $t0, -20($sp)
+
+# label
+label4:
+
+# = 
+lw $t0, -20($sp)
+sw $t0, -8($t8)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -12($t8)
+
+# compare
+lw $t0, -8($t8)
+lw $t1, -12($t8)
+bge $t0, $t1, label5
+
+# = 
+li $t0, 0
+sw $t0, -16($t8)
+
+# = 
+lw $t0, -16($t8)
+sw $t0, -24($sp)
+
+# label
+label6:
+
+# = 
+lw $t0, -24($sp)
+sw $t0, -20($t8)
+
+# = 
+lw $t0, -16($sp)
+sw $t0, -24($t8)
+
+# compare
+lw $t0, -20($t8)
+lw $t1, -24($t8)
+bge $t0, $t1, label7
+
+# = 
+lw $t0, -20($sp)
+sw $t0, -28($t8)
+
 # WRITE
-lw $a0, -4($t8)
-li $v0, 11
+lw $a0, -28($t8)
+li $v0, 1
 syscall
 
 # WRITE STRING
-la $a0, string0
+la $a0, string6
 li $v0, 4
 syscall
 
 # = 
-lw $t0, -12($sp)
-sw $t0, -8($t8)
+lw $t0, -24($sp)
+sw $t0, -32($t8)
 
 # WRITE
-lw $a0, -8($t8)
-li $v0, 11
+lw $a0, -32($t8)
+li $v0, 1
+syscall
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
+# + - * /
+lw $t0, -24($sp)
+addi $t2, $t0, 1
+sw $t2, -24($sp)
+
+# j
+j label6
+
+# label
+label7:
+
+# + - * /
+lw $t0, -20($sp)
+addi $t2, $t0, 1
+sw $t2, -20($sp)
+
+# j
+j label4
+
+# label
+label5:
+
+
+# RETURN
+lw $t8, 0($t8)
+move $fp, $sp
+lw $v0, -8($sp)
+lw $ra, 0($sp)
+lw $sp, -4($sp)
+jr $ra
+
+# FUNC
+fun5:
+sw $ra, 0($fp)
+sw $sp, -4($fp)
+move $sp, $fp
+subi $fp, $fp, 12
+sw $t8, 0($s7)
+move $t8, $s7
+subi $s7, $t8, 56
+
+# INT || CHAR
+subi $fp, $sp, 16
+
+# INT || CHAR
+subi $fp, $sp, 20
+
+# = 
+li $t0, 2
+sw $t0, -4($t8)
+
+# = 
+li $t0, -5
+sw $t0, -8($t8)
+
+# + - * /
+lw $t0, -4($t8)
+lw $t1, -8($t8)
+add $t2, $t0, $t1
+sw $t2, -12($t8)
+
+# = 
+lw $t0, -12($t8)
+sw $t0, -12($sp)
+
+# = 
+lw $t0, -12($sp)
+sw $t0, -16($t8)
+
+# WRITE
+lw $a0, -16($t8)
+li $v0, 1
 syscall
 
 # WRITE STRING
@@ -359,627 +666,73 @@ li $v0, 4
 syscall
 
 # = 
-lw $t0, -16($sp)
-sw $t0, -12($t8)
-
-# WRITE
-lw $a0, -12($t8)
-li $v0, 11
-syscall
-
-# WRITE STRING
-la $a0, string2
-li $v0, 4
-syscall
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-hanoi:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 76
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 16
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 20
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 24
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 28
-
-# = 
-li $t0, 2
-sw $t0, -4($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -8($t8)
-
-# compare
-lw $t0, -4($t8)
-lw $t1, -8($t8)
-ble $t0, $t1, label2
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -12($t8)
-
-# = 
-lw $t0, -24($sp)
-sw $t0, -16($t8)
-
-# real par
-lw $t0, -12($t8)
-sw $t0, -12($fp)
-
-# real par
-lw $t0, -16($t8)
-sw $t0, -16($fp)
-
-# call function
-jal move
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# WRITE STRING
-la $a0, string3
-li $v0, 4
-syscall
-
-# label
-label2:
-
-# = 
-lw $t0, -12($sp)
+li $t0, 97
 sw $t0, -20($t8)
 
 # = 
-li $t0, 1
+li $t0, 2
 sw $t0, -24($t8)
 
 # + - * /
 lw $t0, -20($t8)
 lw $t1, -24($t8)
-sub $t2, $t0, $t1
+mul $t2, $t0, $t1
 sw $t2, -28($t8)
 
-# = 
-lw $t0, -16($sp)
-sw $t0, -32($t8)
+# + - * /
+lw $t1, -28($t8)
+sub $t2, $0, $t1
+sw $t2, -32($t8)
 
 # = 
-lw $t0, -24($sp)
+lw $t0, -32($t8)
+sw $t0, -12($sp)
+
+# = 
+lw $t0, -12($sp)
 sw $t0, -36($t8)
 
+# WRITE
+lw $a0, -36($t8)
+li $v0, 1
+syscall
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
 # = 
-lw $t0, -20($sp)
+li $t0, 6
 sw $t0, -40($t8)
 
-# real par
-lw $t0, -28($t8)
-sw $t0, -12($fp)
+# = 
+li $t0, 4
+sw $t0, -44($t8)
 
-# real par
-lw $t0, -32($t8)
-sw $t0, -16($fp)
-
-# real par
-lw $t0, -36($t8)
-sw $t0, -20($fp)
-
-# real par
+# + - * /
 lw $t0, -40($t8)
-sw $t0, -24($fp)
-
-# call function
-jal hanoi
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -44($t8)
-
-# = 
-lw $t0, -24($sp)
-sw $t0, -48($t8)
-
-# real par
-lw $t0, -44($t8)
-sw $t0, -12($fp)
-
-# real par
-lw $t0, -48($t8)
-sw $t0, -16($fp)
-
-# call function
-jal move
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -52($t8)
-
-# = 
-li $t0, 1
-sw $t0, -56($t8)
-
-# + - * /
-lw $t0, -52($t8)
-lw $t1, -56($t8)
-sub $t2, $t0, $t1
-sw $t2, -60($t8)
-
-# = 
-lw $t0, -20($sp)
-sw $t0, -64($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -68($t8)
-
-# = 
-lw $t0, -24($sp)
-sw $t0, -72($t8)
-
-# real par
-lw $t0, -60($t8)
-sw $t0, -12($fp)
-
-# real par
-lw $t0, -64($t8)
-sw $t0, -16($fp)
-
-# real par
-lw $t0, -68($t8)
-sw $t0, -20($fp)
-
-# real par
-lw $t0, -72($t8)
-sw $t0, -24($fp)
-
-# call function
-jal hanoi
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-getpower:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 96
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 16
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 20
-
-# INT || CHAR
-subi $fp, $sp, 24
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -4($t8)
-
-# = 
-li $t0, 2
-sw $t0, -8($t8)
-
-# compare
-lw $t0, -4($t8)
-lw $t1, -8($t8)
-blt $t0, $t1, label3
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -12($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -16($t8)
-
-# = 
-li $t0, 1
-sw $t0, -20($t8)
-
-# + - * /
-lw $t0, -16($t8)
-lw $t1, -20($t8)
-sub $t2, $t0, $t1
-sw $t2, -24($t8)
-
-# real par
-lw $t0, -12($t8)
-sw $t0, -12($fp)
-
-# real par
-lw $t0, -24($t8)
-sw $t0, -16($fp)
-
-# call function
-jal getpower
-
-# =call
-sw $v0, -28($t8)
-
-# = 
-lw $t0, -28($t8)
-sw $t0, -20($sp)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -32($t8)
-
-# = 
-li $t0, 1
-sw $t0, -36($t8)
-
-# + - * /
-lw $t0, -32($t8)
-lw $t1, -36($t8)
-sub $t2, $t0, $t1
-sw $t2, -40($t8)
-
-# = 
-lw $t0, -20($sp)
-sw $t0, -44($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -48($t8)
-
-# + - * /
-lw $t0, -44($t8)
-lw $t1, -48($t8)
-mul $t2, $t0, $t1
-sw $t2, -52($t8)
-
-# []=
-lw $t0, -52($t8)
-lw $t1, -40($t8)
-sll $t1,$t1,2
-subi $t2, $t9, 40
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -56($t8)
-
-# = 
-lw $t0, -20($sp)
-sw $t0, -60($t8)
-
-# + - * /
-lw $t0, -56($t8)
-lw $t1, -60($t8)
-mul $t2, $t0, $t1
-sw $t2, -64($t8)
-
-
-# RETURN
-lw $t0, -64($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# label
-label3:
-
-# = 
-li $t0, 1
-sw $t0, -68($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -72($t8)
-
-# compare
-lw $t0, -68($t8)
-lw $t1, -72($t8)
-bgt $t0, $t1, label4
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -76($t8)
-
-# = 
-li $t0, 1
-sw $t0, -80($t8)
-
-# + - * /
-lw $t0, -76($t8)
-lw $t1, -80($t8)
-sub $t2, $t0, $t1
-sw $t2, -84($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -88($t8)
-
-# []=
-lw $t0, -88($t8)
-lw $t1, -84($t8)
-sll $t1,$t1,2
-subi $t2, $t9, 40
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -92($t8)
-
-
-# RETURN
-lw $t0, -92($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# label
-label4:
-
-
-# RETURN
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# FUNC
-getsqr:
-sw $ra, 0($fp)
-sw $sp, -4($fp)
-move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 120
-
-# PAR INT || PAR CHAR
-subi $fp, $sp, 16
-
-# INT || CHAR
-subi $fp, $sp, 20
-
-# = 
-li $t0, 1
-sw $t0, -4($t8)
-
-# = 
-lw $t0, -4($t8)
-sw $t0, -16($sp)
-
-# = 
-li $t0, 0
-sw $t0, -8($t8)
-
-# = 
-lw $t0, -8($t8)
-sw $t0, -84($t9)
-
-# label
-label5:
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -12($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -16($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -20($t8)
-
-# + - * /
-lw $t0, -16($t8)
-lw $t1, -20($t8)
+lw $t1, -44($t8)
 div $t2, $t0, $t1
-sw $t2, -24($t8)
-
-# compare
-lw $t0, -12($t8)
-lw $t1, -24($t8)
-bge $t0, $t1, label6
+sw $t2, -48($t8)
 
 # = 
-li $t0, 1
-sw $t0, -28($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -32($t8)
-
-# + - * /
-lw $t0, -28($t8)
-lw $t1, -32($t8)
-add $t2, $t0, $t1
-sw $t2, -36($t8)
-
-# = 
-lw $t0, -36($t8)
-sw $t0, -16($sp)
-
-# + - * /
-lw $t0, -84($t9)
-addi $t2, $t0, 1
-sw $t2, -84($t9)
-
-# j
-j label5
-
-# label
-label6:
+lw $t0, -48($t8)
+sw $t0, -12($sp)
 
 # = 
 lw $t0, -12($sp)
-sw $t0, -40($t8)
-
-# + - * /
-lw $t1, -40($t8)
-sub $t2, $0, $t1
-sw $t2, -44($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -48($t8)
-
-# = 
-lw $t0, -16($sp)
 sw $t0, -52($t8)
 
-# + - * /
-lw $t0, -48($t8)
-lw $t1, -52($t8)
-mul $t2, $t0, $t1
-sw $t2, -56($t8)
+# WRITE
+lw $a0, -52($t8)
+li $v0, 1
+syscall
 
-# + - * /
-lw $t0, -44($t8)
-lw $t1, -56($t8)
-add $t2, $t0, $t1
-sw $t2, -60($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -64($t8)
-
-# = 
-li $t0, 1
-sw $t0, -68($t8)
-
-# + - * /
-lw $t1, -68($t8)
-sub $t2, $0, $t1
-sw $t2, -72($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -76($t8)
-
-# + - * /
-lw $t0, -72($t8)
-lw $t1, -76($t8)
-add $t2, $t0, $t1
-sw $t2, -80($t8)
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -84($t8)
-
-# = 
-li $t0, 1
-sw $t0, -88($t8)
-
-# + - * /
-lw $t0, -84($t8)
-lw $t1, -88($t8)
-sub $t2, $t0, $t1
-sw $t2, -92($t8)
-
-# + - * /
-lw $t0, -80($t8)
-lw $t1, -92($t8)
-mul $t2, $t0, $t1
-sw $t2, -96($t8)
-
-# + - * /
-lw $t0, -64($t8)
-lw $t1, -96($t8)
-sub $t2, $t0, $t1
-sw $t2, -100($t8)
-
-# compare
-lw $t0, -60($t8)
-lw $t1, -100($t8)
-bge $t0, $t1, label7
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -104($t8)
-
-
-# RETURN
-lw $t0, -104($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
-
-# label
-label7:
-
-# = 
-lw $t0, -16($sp)
-sw $t0, -108($t8)
-
-# = 
-li $t0, 1
-sw $t0, -112($t8)
-
-# + - * /
-lw $t0, -108($t8)
-lw $t1, -112($t8)
-sub $t2, $t0, $t1
-sw $t2, -116($t8)
-
-
-# RETURN
-lw $t0, -116($t8)
-sw $t0, -8($sp)
-lw $t8, 0($t8)
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
 
 
 # RETURN
@@ -996,46 +749,34 @@ sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
 subi $fp, $fp, 12
-subi $s7, $t8, 344
+subi $s7, $t8, 124
 
 # CONST INT || CONST CHAR
-li $t0, 65
+li $t0, 20
 sw $t0, -12($sp)
 subi $fp, $sp, 16
 
 # CONST INT || CONST CHAR
-li $t0, 66
+li $t0, 10
 sw $t0, -16($sp)
 subi $fp, $sp, 20
 
-# CONST INT || CONST CHAR
-li $t0, 67
-sw $t0, -20($sp)
+# INT || CHAR
 subi $fp, $sp, 24
 
-# CONST INT || CONST CHAR
-li $t0, 43
-sw $t0, -24($sp)
+# INT || CHAR
 subi $fp, $sp, 28
 
-# CONST INT || CONST CHAR
-li $t0, 45
-sw $t0, -28($sp)
+# INT || CHAR
 subi $fp, $sp, 32
 
-# CONST INT || CONST CHAR
-li $t0, 42
-sw $t0, -32($sp)
+# INT || CHAR
 subi $fp, $sp, 36
 
-# CONST INT || CONST CHAR
-li $t0, 47
-sw $t0, -36($sp)
+# INT || CHAR
 subi $fp, $sp, 40
 
-# CONST INT || CONST CHAR
-li $t0, 100
-sw $t0, -40($sp)
+# INT || CHAR
 subi $fp, $sp, 44
 
 # INT || CHAR
@@ -1051,163 +792,196 @@ subi $fp, $sp, 56
 subi $fp, $sp, 60
 
 # INT || CHAR
-subi $fp, $sp, 100
+subi $fp, $sp, 460
 
 # INT || CHAR
-subi $fp, $sp, 104
-
-# INT || CHAR
-subi $fp, $sp, 504
-
-# INT || CHAR
-subi $fp, $sp, 508
-
-# INT || CHAR
-subi $fp, $sp, 512
-
-# INT || CHAR
-subi $fp, $sp, 516
-
-# INT || CHAR
-subi $fp, $sp, 520
-
-# INT || CHAR
-subi $fp, $sp, 524
-
-# INT || CHAR
-subi $fp, $sp, 528
-
-# INT || CHAR
-subi $fp, $sp, 532
-
-# INT || CHAR
-subi $fp, $sp, 536
-
-# INT || CHAR
-subi $fp, $sp, 540
-
-# INT || CHAR
-subi $fp, $sp, 544
-
-# INT || CHAR
-subi $fp, $sp, 548
-
-# INT || CHAR
-subi $fp, $sp, 552
-
-# INT || CHAR
-subi $fp, $sp, 556
-
-# INT || CHAR
-subi $fp, $sp, 560
-
-# INT || CHAR
-subi $fp, $sp, 564
-
-# INT || CHAR
-subi $fp, $sp, 568
-
-# = 
-li $t0, 123456789
-sw $t0, -4($t8)
-
-# = 
-lw $t0, -4($t8)
-sw $t0, -508($sp)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -8($t8)
-
-# = 
-lw $t0, -8($t8)
-sw $t0, -504($sp)
-
-# = 
-li $t0, 0
-sw $t0, -12($t8)
-
-# = 
-li $t0, 5
-sw $t0, -16($t8)
-
-# []=
-lw $t0, -16($t8)
-lw $t1, -12($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
-
-# = 
-li $t0, 0
-sw $t0, -20($t8)
-
-# =[]
-lw $t1, -20($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -24($t8)
-
-# = 
-li $t0, 1
-sw $t0, -28($t8)
-
-# []=
-lw $t0, -28($t8)
-lw $t1, -24($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
-
-# = 
-lw $t0, -24($sp)
-sw $t0, -32($t8)
-
-# = 
-li $t0, 2
-sw $t0, -36($t8)
-
-# []=
-lw $t0, -36($t8)
-lw $t1, -32($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
+subi $fp, $sp, 480
 
 # READ
 li $v0, 5
+syscall
+sw $v0, -20($sp)
+
+# READ
+li $v0, 12
+syscall
+sw $v0, -36($sp)
+
+# READ
+li $v0, 5
+syscall
+sw $v0, -24($sp)
+
+# READ
+li $v0, 12
+syscall
+sw $v0, -40($sp)
+
+# READ
+li $v0, 5
+syscall
+sw $v0, -28($sp)
+
+# READ
+li $v0, 12
 syscall
 sw $v0, -44($sp)
 
 # READ
 li $v0, 5
 syscall
+sw $v0, -32($sp)
+
+# READ
+li $v0, 12
+syscall
 sw $v0, -48($sp)
 
+# READ
+li $v0, 12
+syscall
+sw $v0, -52($sp)
+
 # = 
-lw $t0, -44($sp)
+lw $t0, -20($sp)
+sw $t0, -4($t8)
+
+# = 
+lw $t0, -12($t9)
+sw $t0, -8($t8)
+
+# compare
+lw $t0, -4($t8)
+lw $t1, -8($t8)
+bge $t0, $t1, label8
+
+# = 
+lw $t0, -20($sp)
+sw $t0, -12($t8)
+
+# = 
+lw $t0, -36($sp)
+sw $t0, -16($t8)
+
+# real par
+lw $t0, -12($t8)
+sw $t0, -12($fp)
+
+# real par
+lw $t0, -16($t8)
+sw $t0, -16($fp)
+
+# call function
+jal fun
+
+# j
+j label9
+
+# label
+label8:
+
+# WRITE STRING
+la $a0, string7
+li $v0, 4
+syscall
+
+# label
+label9:
+
+# = 
+lw $t0, -24($sp)
+sw $t0, -20($t8)
+
+# = 
+lw $t0, -16($t9)
+sw $t0, -24($t8)
+
+# compare
+lw $t0, -20($t8)
+lw $t1, -24($t8)
+beq $t0, $t1, label10
+
+# WRITE STRING
+la $a0, string8
+li $v0, 4
+syscall
+
+# j
+j label11
+
+# label
+label10:
+
+# = 
+lw $t0, -24($sp)
+sw $t0, -28($t8)
+
+# real par
+lw $t0, -28($t8)
+sw $t0, -12($fp)
+
+# call function
+jal fun1
+
+# =call
+sw $v0, -32($t8)
+
+# = 
+lw $t0, -32($t8)
+sw $t0, -424($t9)
+
+# WRITE STRING
+la $a0, string9
+li $v0, 4
+syscall
+
+# = 
+lw $t0, -424($t9)
+sw $t0, -36($t8)
+
+# WRITE
+lw $a0, -36($t8)
+li $v0, 1
+syscall
+
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
+# label
+label11:
+
+# = 
+lw $t0, -28($sp)
 sw $t0, -40($t8)
 
 # = 
-li $t0, 1
+lw $t0, -12($sp)
 sw $t0, -44($t8)
 
 # compare
 lw $t0, -40($t8)
 lw $t1, -44($t8)
-bne $t0, $t1, label8
+ble $t0, $t1, label12
+
+# WRITE STRING
+la $a0, string10
+li $v0, 4
+syscall
+
+# j
+j label13
+
+# label
+label12:
 
 # = 
-lw $t0, -48($sp)
+lw $t0, -28($sp)
 sw $t0, -48($t8)
 
 # = 
-li $t0, 10
+lw $t0, -44($sp)
 sw $t0, -52($t8)
 
 # real par
@@ -1219,167 +993,234 @@ lw $t0, -52($t8)
 sw $t0, -16($fp)
 
 # call function
-jal getpower
+jal fun
 
 # = 
-li $t0, 0
+lw $t0, -28($sp)
 sw $t0, -56($t8)
 
-# = 
+# real par
 lw $t0, -56($t8)
-sw $t0, -52($sp)
+sw $t0, -12($fp)
+
+# call function
+jal fun1
+
+# label
+label13:
 
 # = 
-li $t0, 0
+lw $t0, -32($sp)
 sw $t0, -60($t8)
 
 # = 
-lw $t0, -60($t8)
-sw $t0, -84($t9)
-
-# label
-label9:
-
-# = 
-lw $t0, -52($sp)
+lw $t0, -16($sp)
 sw $t0, -64($t8)
 
-# = 
-li $t0, 10
-sw $t0, -68($t8)
-
 # compare
-lw $t0, -64($t8)
-lw $t1, -68($t8)
-bge $t0, $t1, label10
+lw $t0, -60($t8)
+lw $t1, -64($t8)
+blt $t0, $t1, label14
+
+# call function
+jal fun3
+
+# =call
+sw $v0, -68($t8)
+
+# = 
+lw $t0, -68($t8)
+sw $t0, -56($sp)
 
 # WRITE STRING
-la $a0, string4
+la $a0, string11
 li $v0, 4
 syscall
 
 # = 
-lw $t0, -52($sp)
+lw $t0, -56($sp)
 sw $t0, -72($t8)
 
-# = 
-li $t0, 1
-sw $t0, -76($t8)
+# WRITE
+lw $a0, -72($t8)
+li $v0, 11
+syscall
+bge $a0, 128, charlabel2
+j charlabel3
+charlabel2:
+la $a0, writechar
+li $v0, 4
+syscall
+charlabel3:
 
-# + - * /
-lw $t0, -72($t8)
-lw $t1, -76($t8)
-add $t2, $t0, $t1
-sw $t2, -80($t8)
+# WRITE STRING
+la $a0, string1
+li $v0, 4
+syscall
+
+# WRITE STRING
+la $a0, string12
+li $v0, 4
+syscall
+
+# call function
+jal fun3
+
+# =call
+sw $v0, -76($t8)
 
 # WRITE
-lw $a0, -80($t8)
-li $v0, 1
+lw $a0, -76($t8)
+li $v0, 11
 syscall
+bge $a0, 128, charlabel4
+j charlabel5
+charlabel4:
+la $a0, writechar
+li $v0, 4
+syscall
+charlabel5:
 
 # WRITE STRING
-la $a0, string5
+la $a0, string1
 li $v0, 4
 syscall
 
-# = 
-lw $t0, -52($sp)
-sw $t0, -84($t8)
-
-# =[]
-lw $t1, -84($t8)
-sll $t1,$t1,2
-subi $t2, $t9, 40
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -88($t8)
-
-# WRITE
-lw $a0, -88($t8)
-li $v0, 1
-syscall
-
-# WRITE STRING
-la $a0, string2
-li $v0, 4
-syscall
-
-# WRITE STRING
-la $a0, string6
-li $v0, 4
-syscall
-
-# = 
-li $t0, 1
-sw $t0, -92($t8)
-
-# compare
-lw $t0, -92($t8)
-beq $t0, 0, label11
-
-# = 
-lw $t0, -52($sp)
-sw $t0, -96($t8)
-
-# = 
-li $t0, 1
-sw $t0, -100($t8)
-
-# + - * /
-lw $t0, -96($t8)
-lw $t1, -100($t8)
-add $t2, $t0, $t1
-sw $t2, -104($t8)
-
-# = 
-lw $t0, -104($t8)
-sw $t0, -52($sp)
-
 # label
-label11:
-
-# + - * /
-lw $t0, -84($t9)
-addi $t2, $t0, 1
-sw $t2, -84($t9)
-
-# j
-j label9
-
-# label
-label10:
-
-# label
-label8:
+label14:
 
 # = 
-lw $t0, -44($sp)
-sw $t0, -108($t8)
-
-# = 
-li $t0, 2
-sw $t0, -112($t8)
-
-# compare
-lw $t0, -108($t8)
-lw $t1, -112($t8)
-bne $t0, $t1, label12
-
-# = 
-lw $t0, -48($sp)
-sw $t0, -116($t8)
-
-# = 
-lw $t0, -12($sp)
-sw $t0, -120($t8)
+lw $t0, -32($sp)
+sw $t0, -80($t8)
 
 # = 
 lw $t0, -16($sp)
-sw $t0, -124($t8)
+sw $t0, -84($t8)
+
+# compare
+lw $t0, -80($t8)
+lw $t1, -84($t8)
+bgt $t0, $t1, label15
+
+# WRITE STRING
+la $a0, string13
+li $v0, 4
+syscall
+
+# label
+label15:
 
 # = 
-lw $t0, -20($sp)
-sw $t0, -128($t8)
+lw $t0, -36($sp)
+sw $t0, -88($t8)
+
+# = 
+lw $t0, -56($sp)
+sw $t0, -92($t8)
+
+# compare
+lw $t0, -88($t8)
+lw $t1, -92($t8)
+beq $t0, $t1, label16
+
+# WRITE STRING
+la $a0, string14
+li $v0, 4
+syscall
+
+# label
+label16:
+
+# = 
+li $t0, 2
+sw $t0, -96($t8)
+
+# compare
+lw $t0, -96($t8)
+beq $t0, 0, label17
+
+# WRITE STRING
+la $a0, string15
+li $v0, 4
+syscall
+
+# label
+label17:
+
+# = 
+li $t0, 0
+sw $t0, -100($t8)
+
+# compare
+lw $t0, -100($t8)
+beq $t0, 0, label18
+
+# WRITE STRING
+la $a0, string16
+li $v0, 4
+syscall
+
+# j
+j label19
+
+# label
+label18:
+
+# WRITE STRING
+la $a0, string17
+li $v0, 4
+syscall
+
+# label
+label19:
+
+# = 
+lw $t0, -52($sp)
+sw $t0, -104($t8)
+
+# = 
+lw $t0, -36($sp)
+sw $t0, -108($t8)
+
+# + - * /
+lw $t0, -104($t8)
+lw $t1, -108($t8)
+sub $t2, $t0, $t1
+sw $t2, -112($t8)
+
+# compare
+lw $t0, -112($t8)
+beq $t0, 0, label20
+
+# WRITE STRING
+la $a0, string18
+li $v0, 4
+syscall
+
+# j
+j label21
+
+# label
+label20:
+
+# WRITE STRING
+la $a0, string19
+li $v0, 4
+syscall
+
+# label
+label21:
+
+# call function
+jal fun2
+
+# = 
+li $t0, 2
+sw $t0, -116($t8)
+
+# = 
+li $t0, 3
+sw $t0, -120($t8)
 
 # real par
 lw $t0, -116($t8)
@@ -1389,559 +1230,11 @@ sw $t0, -12($fp)
 lw $t0, -120($t8)
 sw $t0, -16($fp)
 
-# real par
-lw $t0, -124($t8)
-sw $t0, -20($fp)
-
-# real par
-lw $t0, -128($t8)
-sw $t0, -24($fp)
+# call function
+jal fun4
 
 # call function
-jal hanoi
-
-# j
-j label13
-
-# label
-label12:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -132($t8)
-
-# = 
-li $t0, 3
-sw $t0, -136($t8)
-
-# compare
-lw $t0, -132($t8)
-lw $t1, -136($t8)
-bne $t0, $t1, label14
-
-# = 
-lw $t0, -48($sp)
-sw $t0, -140($t8)
-
-# real par
-lw $t0, -140($t8)
-sw $t0, -12($fp)
-
-# call function
-jal fibonacci
-
-# =call
-sw $v0, -144($t8)
-
-# = 
-lw $t0, -144($t8)
-sw $t0, -56($sp)
-
-# = 
-lw $t0, -56($sp)
-sw $t0, -148($t8)
-
-# WRITE
-lw $a0, -148($t8)
-li $v0, 1
-syscall
-
-# label
-label14:
-
-# label
-label13:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -152($t8)
-
-# = 
-li $t0, 4
-sw $t0, -156($t8)
-
-# compare
-lw $t0, -152($t8)
-lw $t1, -156($t8)
-bne $t0, $t1, label15
-
-# = 
-lw $t0, -48($sp)
-sw $t0, -160($t8)
-
-# real par
-lw $t0, -160($t8)
-sw $t0, -12($fp)
-
-# call function
-jal getsqr
-
-# =call
-sw $v0, -164($t8)
-
-# = 
-lw $t0, -164($t8)
-sw $t0, -100($sp)
-
-# = 
-lw $t0, -100($sp)
-sw $t0, -168($t8)
-
-# WRITE
-lw $a0, -168($t8)
-li $v0, 1
-syscall
-
-# j
-j label16
-
-# label
-label15:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -172($t8)
-
-# = 
-li $t0, 5
-sw $t0, -176($t8)
-
-# compare
-lw $t0, -172($t8)
-lw $t1, -176($t8)
-bne $t0, $t1, label17
-
-# call function
-jal testchar
-
-# =call
-sw $v0, -180($t8)
-
-# WRITE
-lw $a0, -180($t8)
-li $v0, 11
-syscall
-
-# = 
-li $t0, 3
-sw $t0, -184($t8)
-
-# = 
-li $t0, 2
-sw $t0, -188($t8)
-
-# + - * /
-lw $t0, -184($t8)
-lw $t1, -188($t8)
-mul $t2, $t0, $t1
-sw $t2, -192($t8)
-
-# = 
-li $t0, 6
-sw $t0, -196($t8)
-
-# + - * /
-lw $t0, -192($t8)
-lw $t1, -196($t8)
-div $t2, $t0, $t1
-sw $t2, -200($t8)
-
-# = 
-li $t0, 0
-sw $t0, -204($t8)
-
-# =[]
-lw $t1, -204($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -208($t8)
-
-# + - * /
-lw $t0, -200($t8)
-lw $t1, -208($t8)
-mul $t2, $t0, $t1
-sw $t2, -212($t8)
-
-# WRITE
-lw $a0, -212($t8)
-li $v0, 1
-syscall
-
-# j
-j label18
-
-# label
-label17:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -216($t8)
-
-# = 
-li $t0, 6
-sw $t0, -220($t8)
-
-# compare
-lw $t0, -216($t8)
-lw $t1, -220($t8)
-bne $t0, $t1, label19
-
-# = 
-li $t0, 0
-sw $t0, -224($t8)
-
-# =[]
-lw $t1, -224($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -228($t8)
-
-# compare
-lw $t0, -228($t8)
-beq $t0, 0, label20
-
-# WRITE STRING
-la $a0, string7
-li $v0, 4
-syscall
-
-# label
-label20:
-
-# = 
-li $t0, 0
-sw $t0, -232($t8)
-
-# = 
-lw $t0, -232($t8)
-sw $t0, -84($t9)
-
-# label
-label21:
-
-# = 
-li $t0, 0
-sw $t0, -236($t8)
-
-# =[]
-lw $t1, -236($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -240($t8)
-
-# compare
-lw $t0, -240($t8)
-beq $t0, 0, label22
-
-# = 
-li $t0, 0
-sw $t0, -244($t8)
-
-# =[]
-lw $t1, -244($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -248($t8)
-
-# WRITE
-lw $a0, -248($t8)
-li $v0, 1
-syscall
-
-# = 
-li $t0, 0
-sw $t0, -252($t8)
-
-# = 
-li $t0, 0
-sw $t0, -256($t8)
-
-# =[]
-lw $t1, -256($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-lw $t0, 0($t2)
-sw $t0, -260($t8)
-
-# = 
-li $t0, 1
-sw $t0, -264($t8)
-
-# + - * /
-lw $t0, -260($t8)
-lw $t1, -264($t8)
-sub $t2, $t0, $t1
-sw $t2, -268($t8)
-
-# []=
-lw $t0, -268($t8)
-lw $t1, -252($t8)
-sll $t1,$t1,2
-subi $t2, $sp, 104
-sub $t2, $t2, $t1
-sw $t0, 0($t2)
-
-# + - * /
-lw $t0, -84($t9)
-addi $t2, $t0, 1
-sw $t2, -84($t9)
-
-# j
-j label21
-
-# label
-label22:
-
-# j
-j label23
-
-# label
-label19:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -272($t8)
-
-# = 
-li $t0, 7
-sw $t0, -276($t8)
-
-# + - * /
-lw $t1, -276($t8)
-sub $t2, $0, $t1
-sw $t2, -280($t8)
-
-# compare
-lw $t0, -272($t8)
-lw $t1, -280($t8)
-bne $t0, $t1, label24
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -520($sp)
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -524($sp)
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -528($sp)
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -532($sp)
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -536($sp)
-
-# READ
-li $v0, 5
-syscall
-sw $v0, -540($sp)
-
-# = 
-lw $t0, -520($sp)
-sw $t0, -284($t8)
-
-# WRITE
-lw $a0, -284($t8)
-li $v0, 1
-syscall
-
-# = 
-lw $t0, -524($sp)
-sw $t0, -288($t8)
-
-# WRITE
-lw $a0, -288($t8)
-li $v0, 1
-syscall
-
-# = 
-lw $t0, -528($sp)
-sw $t0, -292($t8)
-
-# WRITE
-lw $a0, -292($t8)
-li $v0, 1
-syscall
-
-# = 
-lw $t0, -532($sp)
-sw $t0, -296($t8)
-
-# WRITE
-lw $a0, -296($t8)
-li $v0, 1
-syscall
-
-# = 
-lw $t0, -536($sp)
-sw $t0, -300($t8)
-
-# WRITE
-lw $a0, -300($t8)
-li $v0, 1
-syscall
-
-# = 
-lw $t0, -540($sp)
-sw $t0, -304($t8)
-
-# WRITE
-lw $a0, -304($t8)
-li $v0, 1
-syscall
-
-# j
-j label25
-
-# label
-label24:
-
-# = 
-lw $t0, -44($sp)
-sw $t0, -308($t8)
-
-# = 
-li $t0, 0
-sw $t0, -312($t8)
-
-# compare
-lw $t0, -308($t8)
-lw $t1, -312($t8)
-bne $t0, $t1, label26
-
-# READ
-li $v0, 12
-syscall
-sw $v0, -544($sp)
-
-# = 
-lw $t0, -544($sp)
-sw $t0, -316($t8)
-
-# = 
-li $t0, 97
-sw $t0, -320($t8)
-
-# compare
-lw $t0, -316($t8)
-lw $t1, -320($t8)
-bne $t0, $t1, label27
-
-# = 
-li $t0, 1
-sw $t0, -324($t8)
-
-# WRITE
-lw $a0, -324($t8)
-li $v0, 1
-syscall
-
-# j
-j label28
-
-# label
-label27:
-
-# = 
-lw $t0, -544($sp)
-sw $t0, -328($t8)
-
-# = 
-li $t0, 98
-sw $t0, -332($t8)
-
-# compare
-lw $t0, -328($t8)
-lw $t1, -332($t8)
-bne $t0, $t1, label29
-
-# = 
-li $t0, 2
-sw $t0, -336($t8)
-
-# WRITE
-lw $a0, -336($t8)
-li $v0, 1
-syscall
-
-# j
-j label30
-
-# label
-label29:
-
-# WRITE STRING
-la $a0, string8
-li $v0, 4
-syscall
-
-# = 
-li $t0, 3
-sw $t0, -340($t8)
-
-# WRITE
-lw $a0, -340($t8)
-li $v0, 1
-syscall
-
-# label
-label30:
-
-# label
-label28:
-
-# j
-j label31
-
-# label
-label26:
-
-# WRITE STRING
-la $a0, string9
-li $v0, 4
-syscall
-
-# label
-label31:
-
-# label
-label25:
-
-# label
-label23:
-
-# label
-label18:
-
-# label
-label16:
-
-
-# RETURN
-move $fp, $sp
-lw $v0, -8($sp)
-lw $ra, 0($sp)
-lw $sp, -4($sp)
-jr $ra
+jal fun5
 
 
 # RETURN

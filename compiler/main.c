@@ -98,6 +98,7 @@ const char errormessage[][50] = {
 	"函数实参与形参数量或类型不符", //38
 	"有返回值函数不能返回空", //39
 	"无返回值函数只能返回空", //40
+	"非法语句", //41
 };
 //符号表
 struct table{
@@ -153,6 +154,7 @@ enum symbol lastsy;//读到的上一个符号类型
 char lastid[ILNGMAX+1];//读到的上一个标识符
 int funcvalid;//函数是否有效
 int cur_adr;//常量和变量当前的相对地址
+int error_num;
 
 //四元式存储区域
 struct code
@@ -179,6 +181,7 @@ int lasttemp;
 int ifpar;
 int cur_func;//当前函数在ftab表中的位置
 int cur_tabx;//当前查询标识符在tab表中的位置
+int writechar;
 
 //函数声明
 void getch();//获取一个字符
@@ -243,18 +246,12 @@ int main()
 
     i = 1;
     getch();
-    /*while(!feof(fin))
-    {
-        getsym();
-        if(ch == -1)
-            break;
-        print(i++);
-    }*/
     program();
     printtable();
 	printcode();
 	printstring();
-	printmipscode();
+	if(error_num == 0)
+		printmipscode();
     fclose(fin);
 }
 void getch()//获取一个字符
@@ -287,7 +284,8 @@ void getch()//获取一个字符
 }
 void error(int n)
 {
-    printf("Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
+    error_num++;
+	printf("Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
 }
 void getsym()
 {
@@ -1545,16 +1543,19 @@ void compoundstatement()
 }
 void statementlist()//预读一个
 {
-    printf("line%d.%d 语句列识别开始\n", l, cc);
-    while(sym == ident || sym == ifsy || sym == dosy || sym == forsy || sym == scanfsy
+    int i = 0;
+	printf("line%d.%d 语句列识别开始\n", l, cc);
+    while(i == 0 || sym == ident || sym == ifsy || sym == dosy || sym == forsy || sym == scanfsy
         || sym == printfsy || sym == returnsy || sym == lbrace || sym == semicolon)
     {
-        statement();
-        if(sym == rbrace)
-        {
-            break;
-        }
+        i = 1;
+		statement();
+		while(sym != ident && sym != ifsy && sym != dosy && sym != forsy && sym != scanfsy && sym != printfsy 
+			&& sym != returnsy && sym != lbrace && sym != semicolon && sym != rbrace && sym != end)
+			getsym();
     }
+	if(sym != rbrace)
+		error(20);
     printf("line%d.%d 语句列识别结束\n", l, cc);
 }
 void statement()//预读一个，多读一个
@@ -1569,6 +1570,9 @@ void statement()//预读一个，多读一个
             if(sym != semicolon)
             {
                 error(26);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
+				return;
             }
         }
         else if(sym == lparent)
@@ -1577,19 +1581,25 @@ void statement()//预读一个，多读一个
 			if(lasttype == no_type)
 			{
 				error(36);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
 				return;
 			}
 			callfctstatement();
             if(sym != semicolon)
             {
                 error(26);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
+				return;
             }
         }
         else
         {
             error(21);
-            while(sym != semicolon && sym != end)
-                getsym();
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
     }
@@ -1610,7 +1620,10 @@ void statement()//预读一个，多读一个
         readstatement();
         if(sym != semicolon)
         {
-            error(26);
+			error(26);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
     }
@@ -1619,7 +1632,10 @@ void statement()//预读一个，多读一个
         writestatement();
         if(sym != semicolon)
         {
-            error(26);
+			error(26);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
     }
@@ -1628,7 +1644,10 @@ void statement()//预读一个，多读一个
         returnstatement();
         if(sym != semicolon)
         {
-            error(26);
+			error(26);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
     }
@@ -1651,6 +1670,10 @@ void statement()//预读一个，多读一个
         getsym();
         return;
     }
+	else
+	{
+		error(41);
+	}
 }
 void ifstatement()//预读一个，多读一个
 {
@@ -1726,11 +1749,16 @@ void forstatement()//预读一个，多读一个
     if(sym != ident)
     {
         error(10);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	ifdefine(id, other);
 	if(lasttype != variable_int && lasttype != variable_char)
 	{
 		error(36);
+		while(sym != rbrace && sym != end)
+			getsym();
 		return;
 	}
 	localtabx = cur_tabx;
@@ -1738,6 +1766,9 @@ void forstatement()//预读一个，多读一个
     if(sym != becomes)
     {
         error(25);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
     getsym();
     expression();
@@ -1753,6 +1784,9 @@ void forstatement()//预读一个，多读一个
     if(sym != semicolon)
     {
         error(26);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	//条件
     locallabel2 = condition(-1);
@@ -1761,17 +1795,25 @@ void forstatement()//预读一个，多读一个
     if(sym != semicolon)
     {
         error(26);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	//保存步长信息
     getsym();
     if(sym != ident)
     {
         error(10);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	ifdefine(id, other);
 	if(lasttype != variable_int && lasttype != variable_char)
 	{
 		error(36);
+		while(sym != rbrace && sym != end)
+			getsym();
 		return;
 	}
 	localtabx = cur_tabx;
@@ -1779,16 +1821,24 @@ void forstatement()//预读一个，多读一个
     if(sym != becomes)
     {
         error(25);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
     getsym();
     if(sym != ident)
     {
         error(10);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	ifdefine(id, other);
 	if(lasttype == no_type)
 	{
 		error(36);
+		while(sym != rbrace && sym != end)
+			getsym();
 		return;
 	}
 	localtabx1 = cur_tabx;
@@ -1796,18 +1846,27 @@ void forstatement()//预读一个，多读一个
     if(sym != plus && sym != minus)
     {
 		error(27);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	localsym = sym;
     getsym();
     if(sym != intcon)
     {
         error(8);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	localnum = inum;
     getsym();
     if(sym != rparent)
     {
         error(17);
+		while(sym != rbrace && sym != end)
+			getsym();
+		return;
     }
     getsym();
     statement();
@@ -1903,6 +1962,8 @@ void assignment()//预读到=或[，多读一个
 		if(lasttype != variable_int && lasttype != variable_char)
 		{
 			error(36);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
 			return;
 		}
 		localtabx = cur_tabx;
@@ -1914,6 +1975,8 @@ void assignment()//预读到=或[，多读一个
         expression();
 		if(lasttype == no_type)
 		{
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
 			return;
 		}
 		gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
@@ -1928,6 +1991,8 @@ void assignment()//预读到=或[，多读一个
 		if(lasttype == no_type)
 		{
 			error(36);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
 			return;
 		}
 		if(lasttype == array_int)
@@ -1939,18 +2004,24 @@ void assignment()//预读到=或[，多读一个
         expression();
         if(sym != rbrack)
         {
-            error(15);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
 		indextemp = lasttemp;
         getsym();
         if(sym != becomes)
         {
-            error(25);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
         expression();
 		if(lasttype == no_type)
 		{
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
 			return;
 		}
 		gen("[]=", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(lasttemp, 3));
@@ -1972,11 +2043,16 @@ void readstatement()//预读一个，多读一个
         if(sym != ident)
         {
             error(10);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
 		ifdefine(id, other);
 		if(lasttype != variable_int && lasttype != variable_char)
 		{
 			error(36);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
 			return;
 		}
 		if(lasttype == variable_int)
@@ -1988,6 +2064,9 @@ void readstatement()//预读一个，多读一个
     if(sym != rparent)
     {
         error(17);
+		while(sym != semicolon && sym != rbrace && sym != end)
+			getsym();
+		return;
     }
     getsym();
     printf("line%d.%d scanf语句分析完成\n", l, cc);
@@ -2023,6 +2102,9 @@ void writestatement()//预读一个，多读一个
             if(sym != rparent)
             {
                 error(17);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
+				return;
             }
             printf("line%d.%d printf语句分析完成\n", l, cc);
         }
@@ -2033,6 +2115,9 @@ void writestatement()//预读一个，多读一个
         else
         {
             error(29);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
     }
     else
@@ -2049,6 +2134,9 @@ void writestatement()//预读一个，多读一个
         if(sym != rparent)
         {
             error(17);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         printf("line%d.%d printf语句分析完成\n", l, cc);
     }
@@ -2069,6 +2157,9 @@ void returnstatement()//预读一个，多读一个
         if(sym != rparent)
         {
             error(17);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
 		if(tab[ftab[f].tref].typ == inttype)
 			gen("RETURN INT", "", "", tempvar(lasttemp, 3));
@@ -2101,11 +2192,16 @@ void callfctstatement()//预读到(
 	if(parnum == -1)
 	{
 		error(38);
+		while(sym != semicolon && sym != rbrace && sym != end)
+			getsym();
 		return;
 	}
     if(sym != rparent)
     {
         error(17);
+		while(sym != semicolon && sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 	if(localtype == function_int)
 		gen("CALL INT FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
@@ -2255,6 +2351,8 @@ void factor()//预读一个，多读一个
 			if(lasttype == no_type)
 			{
 				error(36);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
 				return;
 			}
 			localtype = lasttype;
@@ -2268,6 +2366,9 @@ void factor()//预读一个，多读一个
             else
             {
                 error(15);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
+				return;
             }
 			gen("=[]", totable(localtabx, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
@@ -2284,6 +2385,8 @@ void factor()//预读一个，多读一个
 			if(lasttype != function_char && lasttype != function_int)
 			{
 				error(36);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
 				return;
 			}
 			localtype = lasttype;
@@ -2303,6 +2406,8 @@ void factor()//预读一个，多读一个
 			if(lasttype == no_type)
 			{
 				error(36);
+				while(sym != semicolon && sym != rbrace && sym != end)
+					getsym();
 				return;
 			}
 			printf("line%d.%d 因子为<标识符>的形式\n", l, cc);
@@ -2325,6 +2430,9 @@ void factor()//预读一个，多读一个
         else
         {
             error(17);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
         getsym();
     }
@@ -2347,6 +2455,9 @@ void factor()//预读一个，多读一个
         else
         {
             error(8);
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
         }
 		if(lastsy == minus)
 			inum *= -1;
@@ -2367,7 +2478,9 @@ void factor()//预读一个，多读一个
     {
         error(23);
         //TODO:跳到哪里？？？
-        getsym();
+		while(sym != semicolon && sym != rbrace && sym != end)
+			getsym();
+		return;
     }
 }
 
@@ -2443,6 +2556,7 @@ void printmipscode()
 	}
 	fprintf(fout, ".data\n");
 	fprintf(fout, "temp: .word 0x7fff0000\n");
+	fprintf(fout, "writechar: .asciiz \"write char out of range\"\n");
 	for(i = 0; i < stringx; i++)
 	{
 		fprintf(fout, "string%d: .asciiz \"%s\"\n", i, strtable[i]);
@@ -2932,6 +3046,17 @@ void printmipscode()
 			else
 				fprintf(fout, "li $v0, 11\n");
 			fprintf(fout, "syscall\n");
+			if(strcmp(codes[i].type, "WRITE CHAR") == 0)
+			{
+				fprintf(fout, "bge $a0, 128, charlabel%d\n", writechar);
+				fprintf(fout, "j charlabel%d\n", writechar+1);
+				fprintf(fout, "charlabel%d:\n", writechar);
+				fprintf(fout, "la $a0, writechar\n");
+				fprintf(fout, "li $v0, 4\n");
+				fprintf(fout, "syscall\n");
+				fprintf(fout, "charlabel%d:\n", writechar+1);
+				writechar += 2;
+			}
 		}
 		else if(strcmp(codes[i].type, "READ INT") == 0
 			|| strcmp(codes[i].type, "READ CHAR") == 0)

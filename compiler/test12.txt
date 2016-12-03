@@ -1,0 +1,11 @@
+void x(){
+
+
+
+int x;
+int y;
+void main(){
+    char ch;
+	ch = 129;
+	printf(ch);
+}
