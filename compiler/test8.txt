@@ -13,5 +13,5 @@ void main()
 {
 	int i;
 	i = fib(6);
-	printf("fib:", i);
+	printf("fib:\n", i);
 }

@@ -1,5 +1,4 @@
 .data
-temp: .word 0x7fff0000
 writechar: .asciiz "write char out of range"
 string0: .asciiz "fun: gbi:"
 string1: .asciiz "|"
@@ -22,61 +21,50 @@ string17: .asciiz "0 is false.|"
 string18: .asciiz "c5 - c1 is true.|"
 string19: .asciiz "c5 - c1 is false.|"
 .text
-lw $t8, temp
 move $t9, $sp
 subi $fp, $sp, 12
 
 # CONST INT || CONST CHAR
 li $t0, 23
 sw $t0, -12($sp)
-subi $fp, $sp, 16
 
 # CONST INT || CONST CHAR
 li $t0, 10
 sw $t0, -16($sp)
-subi $fp, $sp, 20
 
 # CONST INT || CONST CHAR
 li $t0, 43
 sw $t0, -20($sp)
-subi $fp, $sp, 24
 
 # INT || CHAR
-subi $fp, $sp, 424
 
 # INT || CHAR
-subi $fp, $sp, 428
 
 # INT || CHAR
-subi $fp, $sp, 448
 
 # INT || CHAR
+
 subi $fp, $sp, 452
-
-jal main
+jal func_main
 
 #program end
 li $v0, 10
 syscall
 
 # FUNC
-fun:
+func_fun:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 52
+sw $t8, -24($sp)
+subi $t8, $sp, 24
+subi $fp, $sp, 76
 
 # PAR INT || PAR CHAR
-subi $fp, $sp, 16
 
 # PAR INT || PAR CHAR
-subi $fp, $sp, 20
 
 # INT || CHAR
-subi $fp, $sp, 24
 
 # = 
 lw $t0, -12($sp)
@@ -191,7 +179,6 @@ la $a0, string1
 li $v0, 4
 syscall
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -201,20 +188,17 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-fun1:
+func_fun1:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 40
+sw $t8, -20($sp)
+subi $t8, $sp, 20
+subi $fp, $sp, 60
 
 # PAR INT || PAR CHAR
-subi $fp, $sp, 16
 
 # INT || CHAR
-subi $fp, $sp, 20
 
 # = 
 lw $t0, -12($sp)
@@ -248,7 +232,7 @@ lw $t0, -20($t8)
 sw $t0, -12($fp)
 
 # call function
-jal fun1
+jal func_fun1
 
 # =call
 sw $v0, -24($t8)
@@ -262,7 +246,6 @@ lw $t0, -24($t8)
 lw $t1, -28($t8)
 add $t2, $t0, $t1
 sw $t2, -32($t8)
-
 
 # RETURN
 lw $t0, -32($t8)
@@ -281,7 +264,6 @@ label1:
 lw $t0, -12($sp)
 sw $t0, -36($t8)
 
-
 # RETURN
 lw $t0, -36($t8)
 sw $t0, -8($sp)
@@ -292,7 +274,6 @@ lw $ra, 0($sp)
 lw $sp, -4($sp)
 jr $ra
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -302,22 +283,19 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-fun2:
+func_fun2:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 60
+sw $t8, -20($sp)
+subi $t8, $sp, 20
+subi $fp, $sp, 80
 
 # CONST INT || CONST CHAR
 li $t0, 5
 sw $t0, -12($sp)
-subi $fp, $sp, 16
 
 # INT || CHAR
-subi $fp, $sp, 20
 
 # = 
 lw $t0, -12($sp)
@@ -440,7 +418,6 @@ la $a0, string4
 li $v0, 4
 syscall
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -450,14 +427,13 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-fun3:
+func_fun3:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 8
+sw $t8, -12($sp)
+subi $t8, $sp, 12
+subi $fp, $sp, 20
 
 # WRITE STRING
 la $a0, string5
@@ -467,7 +443,6 @@ syscall
 # = 
 li $t0, 97
 sw $t0, -4($t8)
-
 
 # RETURN
 lw $t0, -4($t8)
@@ -479,7 +454,6 @@ lw $ra, 0($sp)
 lw $sp, -4($sp)
 jr $ra
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -489,26 +463,21 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-fun4:
+func_fun4:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 36
+sw $t8, -28($sp)
+subi $t8, $sp, 28
+subi $fp, $sp, 64
 
 # PAR INT || PAR CHAR
-subi $fp, $sp, 16
 
 # PAR INT || PAR CHAR
-subi $fp, $sp, 20
 
 # INT || CHAR
-subi $fp, $sp, 24
 
 # INT || CHAR
-subi $fp, $sp, 28
 
 # = 
 li $t0, 0
@@ -608,7 +577,6 @@ j label4
 # label
 label5:
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -618,20 +586,17 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-fun5:
+func_fun5:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-sw $t8, 0($s7)
-move $t8, $s7
-subi $s7, $t8, 56
+sw $t8, -20($sp)
+subi $t8, $sp, 20
+subi $fp, $sp, 76
 
 # INT || CHAR
-subi $fp, $sp, 16
 
 # INT || CHAR
-subi $fp, $sp, 20
 
 # = 
 li $t0, 2
@@ -734,7 +699,6 @@ la $a0, string1
 li $v0, 4
 syscall
 
-
 # RETURN
 lw $t8, 0($t8)
 move $fp, $sp
@@ -744,58 +708,45 @@ lw $sp, -4($sp)
 jr $ra
 
 # FUNC
-main:
+func_main:
 sw $ra, 0($fp)
 sw $sp, -4($fp)
 move $sp, $fp
-subi $fp, $fp, 12
-subi $s7, $t8, 124
+sw $t8, -480($sp)
+subi $t8, $sp, 480
+subi $fp, $sp, 604
 
 # CONST INT || CONST CHAR
 li $t0, 20
 sw $t0, -12($sp)
-subi $fp, $sp, 16
 
 # CONST INT || CONST CHAR
 li $t0, 10
 sw $t0, -16($sp)
-subi $fp, $sp, 20
 
 # INT || CHAR
-subi $fp, $sp, 24
 
 # INT || CHAR
-subi $fp, $sp, 28
 
 # INT || CHAR
-subi $fp, $sp, 32
 
 # INT || CHAR
-subi $fp, $sp, 36
 
 # INT || CHAR
-subi $fp, $sp, 40
 
 # INT || CHAR
-subi $fp, $sp, 44
 
 # INT || CHAR
-subi $fp, $sp, 48
 
 # INT || CHAR
-subi $fp, $sp, 52
 
 # INT || CHAR
-subi $fp, $sp, 56
 
 # INT || CHAR
-subi $fp, $sp, 60
 
 # INT || CHAR
-subi $fp, $sp, 460
 
 # INT || CHAR
-subi $fp, $sp, 480
 
 # READ
 li $v0, 5
@@ -872,7 +823,7 @@ lw $t0, -16($t8)
 sw $t0, -16($fp)
 
 # call function
-jal fun
+jal func_fun
 
 # j
 j label9
@@ -921,7 +872,7 @@ lw $t0, -28($t8)
 sw $t0, -12($fp)
 
 # call function
-jal fun1
+jal func_fun1
 
 # =call
 sw $v0, -32($t8)
@@ -993,7 +944,7 @@ lw $t0, -52($t8)
 sw $t0, -16($fp)
 
 # call function
-jal fun
+jal func_fun
 
 # = 
 lw $t0, -28($sp)
@@ -1004,7 +955,7 @@ lw $t0, -56($t8)
 sw $t0, -12($fp)
 
 # call function
-jal fun1
+jal func_fun1
 
 # label
 label13:
@@ -1023,7 +974,7 @@ lw $t1, -64($t8)
 blt $t0, $t1, label14
 
 # call function
-jal fun3
+jal func_fun3
 
 # =call
 sw $v0, -68($t8)
@@ -1064,7 +1015,7 @@ li $v0, 4
 syscall
 
 # call function
-jal fun3
+jal func_fun3
 
 # =call
 sw $v0, -76($t8)
@@ -1212,7 +1163,7 @@ syscall
 label21:
 
 # call function
-jal fun2
+jal func_fun2
 
 # = 
 li $t0, 2
@@ -1231,11 +1182,10 @@ lw $t0, -120($t8)
 sw $t0, -16($fp)
 
 # call function
-jal fun4
+jal func_fun4
 
 # call function
-jal fun5
-
+jal func_fun5
 
 # RETURN
 move $fp, $sp

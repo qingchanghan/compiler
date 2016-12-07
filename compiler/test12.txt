@@ -1,11 +1,23 @@
-void x(){
-
-
-
-int x;
-int y;
+int  funint (int x){
+    return (x);
+    b=c+d
+}
 void main(){
-    char ch;
-	ch = 129;
-	printf(ch);
+    char ch,ch1;
+    char s[10];
+    s[0]='a';
+    s[1]='b';
+    s[2]=63;
+    ch='d';
+    ch1=s[2]+2;
+    printf(s[0];
+    printf(s[]);
+    printfs[2]);
+    printf(ch);
+    printf(fun);
+    printf('e');
+    printf();
+    printf('1');
+    ch=49
+    printf(ch);
 }

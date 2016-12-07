@@ -154,6 +154,7 @@ enum symbol lastsy;//读到的上一个符号类型
 char lastid[ILNGMAX+1];//读到的上一个标识符
 int funcvalid;//函数是否有效
 int cur_adr;//常量和变量当前的相对地址
+int globaladr;//全局常量和变量的相对地址
 int error_num;
 
 //四元式存储区域
@@ -247,9 +248,9 @@ int main()
     i = 1;
     getch();
     program();
+	printf("\n错误数量: %d个\n\n", error_num);
     printtable();
 	printcode();
-	printstring();
 	if(error_num == 0)
 		printmipscode();
     fclose(fin);
@@ -285,7 +286,9 @@ void getch()//获取一个字符
 void error(int n)
 {
     error_num++;
+	printf("---------------------------------------------------------------------\n");
 	printf("Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
+	printf("---------------------------------------------------------------------\n");
 }
 void getsym()
 {
@@ -424,6 +427,8 @@ void getsym()
                         while(k < STRINGMAX && ch != '\"' && ch >= 32 && ch <= 126)
                         {
                             string[k++] = ch;
+							if(ch == '\\')
+								string[k++] = ch;
                             getch();
                         }
                         string[k] = '\0';
@@ -436,9 +441,9 @@ void getsym()
                         }
                         else
                         {
-                            if(ch != '\"')
+							if(ch != '\"')
                             {
-                                error(4);
+								error(4);
                                 getch();
                                 while(ch >= 32 && ch <= 126)
                                     getch();
@@ -962,6 +967,10 @@ void entertable(enum obj object, enum type thetype)
 		ftab[f].size = 0;
         ftab[f].tref = t;
         ftab[f].parnum = 0;
+		if(f == 0)//存储全局常变量的地址
+		{
+			globaladr = cur_adr;
+		}
 		cur_adr = 0;
 
         strcpy_s(tab[t].name, ILNGMAX+1, lastid);
@@ -1670,6 +1679,10 @@ void statement()//预读一个，多读一个
         getsym();
         return;
     }
+	else if(sym == rbrace)
+	{
+		return;
+	}
 	else
 	{
 		error(41);
@@ -2504,41 +2517,54 @@ void print(int n)
 void printtable()
 {
     int i;
-    printf("symbol table\n");
+	FILE *table;
+	errno_t err;
+	err = fopen_s(&table, "table.txt", "w");
+	if(err !=  0)
+	{
+		printf("table.txt open failed!\n");
+		return;
+	}
+    fprintf(table, "symbol table\n");
     for(i = 0; i < t; i++)
     {
-        printf("id: %2d   name: %10s link: %4d   obj: %1d   typ: %1d   ref: %2d   adr: %5d   value: %5d\n",
+        fprintf(table, "id: %2d   name: %10s link: %4d   obj: %1d   typ: %1d   ref: %2d   adr: %5d   value: %5d\n",
             i, tab[i].name, tab[i].link, tab[i].obj, tab[i].typ, tab[i].ref, tab[i].adr, tab[i].value);
     }
-    printf("\n\n\nfunction table\n");
+    fprintf(table, "\n\n\nfunction table\n");
     for(i = 0; i < f; i++)
     {
-        printf("id: %2d   name: %10s   tref: %3d   parnum: %1d   size: %5d\n",
+        fprintf(table, "id: %2d   name: %10s   tref: %3d   parnum: %1d   size: %5d\n",
             i, tab[ftab[i].tref].name, ftab[i].tref, ftab[i].parnum, ftab[i].size);
     }
-    printf("\n\n\narray table\n");
+    fprintf(table, "\n\n\narray table\n");
     for(i = 0; i < a; i++)
     {
-        printf("id: %2d   name: %10s   tref: %3d   eltyp: %1d   high: %5d\n",
+        fprintf(table, "id: %2d   name: %10s   tref: %3d   eltyp: %1d   high: %5d\n",
             i, tab[atab[i].tref].name, atab[i].tref, atab[i].eltyp, atab[i].high);
     }
-}
-void printstring()
-{
-	int i;
-	printf("\n\n\n");
+	fprintf(table, "\n\n\nstring table\n");
 	for(i = 0; i < stringx; i++)
 	{
-		printf("%s\n", strtable[i]);
+		fprintf(table, "id:%3d  %s\n", i, strtable[i]);
 	}
+	fclose(table);
 }
 void printcode()
 {
 	int i;
-	printf("\n\n\nmidcode\n");
+	FILE *mid;
+	errno_t err;
+	err = fopen_s(&mid, "midcode.txt", "w");
+	if(err != 0)
+	{
+		printf("midcode.txt open failed!\n");
+		return;
+	}
+	fprintf(mid, "midcode\n\n");
 	for(i = 0; i < codeindex; i++)
 	{
-		printf("index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
+		fprintf(mid, "index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
 			codes[i].arg1, codes[i].arg2, codes[i].result);
 	}
 }
@@ -2551,18 +2577,16 @@ void printmipscode()
 	err = fopen_s(&fout, "mips.txt", "w+");
 	if(err != 0)
 	{
-		printf("open failed!\n");
+		printf("mips.txt open failed!\n");
 		return;
 	}
 	fprintf(fout, ".data\n");
-	fprintf(fout, "temp: .word 0x7fff0000\n");
 	fprintf(fout, "writechar: .asciiz \"write char out of range\"\n");
 	for(i = 0; i < stringx; i++)
 	{
 		fprintf(fout, "string%d: .asciiz \"%s\"\n", i, strtable[i]);
 	}
 	fprintf(fout, ".text\n");
-	fprintf(fout, "lw $t8, temp\n");//$t8存储临时变量基地址
 	fprintf(fout, "move $t9, $sp\n");//$t9存储全局变量地址
 	fprintf(fout, "subi $fp, $sp, 12\n\n");
 
@@ -2574,14 +2598,11 @@ void printmipscode()
 			index = tab[intfromtabx(codes[i].arg1)].adr;
 			fprintf(fout, "li $t0, %s\n", codes[i].result);
 			fprintf(fout, "sw $t0, -%d($sp)\n", 8 + index);
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
 		else if(strcmp(codes[i].type, "INT") == 0 || strcmp(codes[i].type, "INT[]") == 0
 			|| strcmp(codes[i].type, "CHAR") == 0 || strcmp(codes[i].type, "CHAR[]") == 0)
 		{
 			fprintf(fout, "# INT || CHAR\n");
-			index = tab[intfromtabx(codes[i].result)].adr;
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
 		else if(strcmp(codes[i].type, "VOID FUNC") == 0 || strcmp(codes[i].type, "INT FUNC") == 0
 			|| strcmp(codes[i].type, "CHAR FUNC") == 0)
@@ -2589,7 +2610,8 @@ void printmipscode()
 			if(flag == 0)
 			{
 				flag = 1;
-				fprintf(fout, "jal main\n\n");
+				fprintf(fout, "subi $fp, $sp, %d\n", 12 + globaladr);
+				fprintf(fout, "jal func_main\n\n");
 				fprintf(fout, "#program end\n");
 				fprintf(fout, "li $v0, 10\n");
 				fprintf(fout, "syscall\n\n");
@@ -2597,27 +2619,18 @@ void printmipscode()
 			fprintf(fout, "# FUNC\n");
 			index = intfromtabx(codes[i].result);
 			localf = index;
-			fprintf(fout, "%s:\n", tab[ftab[index].tref].name);
+			fprintf(fout, "func_%s:\n", tab[ftab[index].tref].name);
 			fprintf(fout, "sw $ra, 0($fp)\n");
 			fprintf(fout, "sw $sp, -4($fp)\n");
 			fprintf(fout, "move $sp, $fp\n");
-			fprintf(fout, "subi $fp, $fp, 12\n");
-			if(localf == f - 1)
-			{
-				fprintf(fout, "subi $s7, $t8, %d\n", ftab[localf].lasttvs * 4 + 4);
-			}
-			else
-			{
-				fprintf(fout, "sw $t8, 0($s7)\n");
-				fprintf(fout, "move $t8, $s7\n");
-				fprintf(fout, "subi $s7, $t8, %d\n", ftab[localf].lasttvs * 4 + 4);
-			}
+			//对$t8操作
+			fprintf(fout, "sw $t8, -%d($sp)\n", 12 + ftab[localf].size);
+			fprintf(fout, "subi $t8, $sp, %d\n", 12 + ftab[localf].size);
+			fprintf(fout, "subi $fp, $sp, %d\n", 12 + ftab[localf].size + ftab[localf].lasttvs * 4 + 4);
 		}
 		else if(strcmp(codes[i].type, "PAR INT") == 0 || strcmp(codes[i].type, "PAR CHAR") == 0)
 		{
 			fprintf(fout, "# PAR INT || PAR CHAR\n");
-			index = tab[intfromtabx(codes[i].result)].adr;
-			fprintf(fout, "subi $fp, $sp, %d\n", 12 + index);
 		}
 		else if(strcmp(codes[i].type, "=") == 0)
 		{
@@ -2963,7 +2976,7 @@ void printmipscode()
 			fprintf(fout, "# call function\n");
 			parno = 0;
 			index = intfromtabx(codes[i].result);
-			fprintf(fout, "jal %s\n", tab[ftab[index].tref].name);
+			fprintf(fout, "jal func_%s\n", tab[ftab[index].tref].name);
 		}
 		else if(strcmp(codes[i].type, "=CALL") == 0)
 		{
@@ -2989,7 +3002,6 @@ void printmipscode()
 			|| strcmp(codes[i].type, "RETURN CHAR") == 0
 			|| strcmp(codes[i].type, "RETURN VOID") == 0)
 		{
-			fprintf(fout, "\n");
 			fprintf(fout, "# RETURN\n");
 			if(strcmp(codes[i].type, "RETURN VOID") != 0)
 			{
