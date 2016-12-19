@@ -27,13 +27,13 @@ enum obj{
     constant, variable, function
 }; //标识符种类
 enum type{
-    inttype, chartype, arraytype, voidtype
+    inttype, chartype, arraytype, voidtype, con_int, con_char
 }; //标识符类型
 enum identtype{
 	array_type, function_type, other, 
 	array_int, array_char, function_int, function_char, function_void,
 	constant_int, constant_char, variable_int, variable_char, no_type
-};
+}; //因子-项-表达式类型
 const char symbolstr[][12] = {
     "notsy", "plus", "minus", "times", "div", "becomes",
     "eql", "neq", "gtr", "geq", "lss", "leq",
@@ -140,6 +140,7 @@ enum symbol wsym[13] = {//保留字对应类型
     mainsy, printfsy, returnsy, scanfsy, voidsy, whilesy
 };
 FILE *fin; //输入文件指针
+FILE *parse;//语法分析结果文件指针
 char ch; //当前所读字符
 int cc = -1; //当前所取字符在该行的位置
 char line[MAX_LINE]; //当前行
@@ -177,6 +178,7 @@ char temp_s1[ILNGMAX+1];
 char temp_s2[ILNGMAX+1];
 char temp_s3[ILNGMAX+1];
 enum identtype lasttype;
+int lastcontent;
 enum type exptype;
 int lasttemp;
 int ifpar;
@@ -188,7 +190,7 @@ int writechar;
 void getch();//获取一个字符
 void error(int n);
 void getsym();
-char* inttoa(int n);
+char* inttoa(int n, int flag);
 int atoint(char s[]);
 char* tempvar(int n, int flag);//生成临时变量
 char* tolabel(int n);
@@ -240,10 +242,17 @@ int main()
     err = fopen_s(&fin, sin, "r");
     if(err != 0)
     {
-        printf("Failed to open!\n");
+        printf("Failed to open %s!\n", sin);
         return 1;
     }
     printf("Open successfully!\n");
+
+	err = fopen_s(&parse, "parse_result.txt", "w");
+	if(err != 0)
+	{
+		printf("Failed to open parse_result.txt!\n");
+		return 1;
+	}
 
     i = 1;
     getch();
@@ -254,6 +263,7 @@ int main()
 	if(error_num == 0)
 		printmipscode();
     fclose(fin);
+	fclose(parse);
 }
 void getch()//获取一个字符
 {
@@ -289,6 +299,9 @@ void error(int n)
 	printf("---------------------------------------------------------------------\n");
 	printf("Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
 	printf("---------------------------------------------------------------------\n");
+	fprintf(parse, "---------------------------------------------------------------------\n");
+	fprintf(parse, "Error%d in line%d.%d 错误信息：%s\n", n, l, cc, errormessage[n]);
+	fprintf(parse, "---------------------------------------------------------------------\n");
 }
 void getsym()
 {
@@ -543,10 +556,23 @@ void getsym()
     }
     return ;
 }
-char* inttoa(int n)
+char* inttoa(int n, int flag)
 {
-	sprintf_s(temp_s, 10, "%d", n);
-	return temp_s;
+	if(flag == 1)
+	{
+		sprintf_s(temp_s1, 10, "%d", n);
+		return temp_s1;
+	}
+	else if(flag == 2)
+	{
+		sprintf_s(temp_s2, 10, "%d", n);
+		return temp_s2;
+	}
+	else
+	{
+		sprintf_s(temp_s3, 10, "%d", n);
+		return temp_s3;
+	}
 }
 int atoint(char s[])
 {
@@ -852,13 +878,13 @@ void entertable(enum obj object, enum type thetype)
         {
             tab[t].typ = inttype;
             tab[t].value = inum;
-			gen("CONST INT", totable(t, 1), "", inttoa(inum));
+			gen("CONST INT", totable(t, 1), "", inttoa(inum, 3));
         }
         else if(thetype == chartype)
         {
             tab[t].typ = chartype;
             tab[t].value = c;
-			gen("CONST CHAR", totable(t, 1), "", inttoa(c-'\0'));
+			gen("CONST CHAR", totable(t, 1), "", inttoa(c-'\0', 3));
         }
 		cur_adr += 4;
 		tab[t].adr = cur_adr;
@@ -887,12 +913,12 @@ void entertable(enum obj object, enum type thetype)
             if(lastsy == intsy)
             {
                 atab[a].eltyp = inttype;
-				gen("INT[]", inttoa(inum), "", totable(t, 3));
+				gen("INT[]", inttoa(inum, 1), "", totable(t, 3));
             }
             else
             {
                 atab[a].eltyp = chartype;
-				gen("CHAR[]", inttoa(inum), "", totable(t, 3));
+				gen("CHAR[]", inttoa(inum, 1), "", totable(t, 3));
             }
             atab[a].tref = t;
             atab[a].high = inum;
@@ -1004,7 +1030,7 @@ void program()//处理总程序
     {
         constdec();
     }
-    printf("line%d.%d 全局常量声明部分处理完毕\n", l, cc);
+    fprintf(parse, "line%d.%d 全局常量声明部分处理完毕\n", l, cc);
     while(sym == intsy || sym == charsy || sym == voidsy)
     {
         lastsy = sym;
@@ -1053,7 +1079,7 @@ void program()//处理总程序
             {
                 //这里的错误处理暂时没有思路，暂时直接结束
                 error(14);
-                printf("line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
                 return;
             }
         }
@@ -1064,7 +1090,7 @@ void program()//处理总程序
             if(sym == mainsy)//主函数
             {
                 maindec();
-                printf("line%d.%d 语法分析完成\n", l, cc);
+                fprintf(parse, "line%d.%d 语法分析完成\n", l, cc);
                 return;
             }
             else if(sym == ident)//无返回值函数
@@ -1081,7 +1107,7 @@ void program()//处理总程序
             else
             {
                 error(16);
-                printf("line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
                 return;
             }
         }
@@ -1112,7 +1138,7 @@ void program()//处理总程序
             if(sym == mainsy)//主函数
             {
                 maindec();
-                printf("line%d.%d 语法分析完成\n", l, cc);
+                fprintf(parse, "line%d.%d 语法分析完成\n", l, cc);
                 return;
             }
             else if(sym == ident)//无返回值函数
@@ -1128,18 +1154,18 @@ void program()//处理总程序
             else
             {
                 error(16);
-                printf("line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
                 return;
             }
         }
     }
     if(sym == end)
     {
-        printf("line%d.%d 到达文件结尾\n", l, cc);
+        fprintf(parse, "line%d.%d 到达文件结尾\n", l, cc);
     }
     else
     {
-        printf("line%d.%d 未处理完，发生错误\n", l, cc);
+        fprintf(parse, "line%d.%d 未处理完，发生错误\n", l, cc);
     }
 }
 void constdec()//处理常量声明部分
@@ -1194,13 +1220,13 @@ void constdec()//处理常量声明部分
                                 if(lastsy == minus)
                                     inum = -1 * inum;
                                 entertable(constant, inttype);
-                                printf("line%d.%d 常量声明语句：const int %s = %d;\n", l, cc, lastid, inum);
+                                fprintf(parse, "line%d.%d 常量声明语句：const int %s = %d;\n", l, cc, lastid, inum);
                                 getsym();
                             }
                             else
                             {
                                 entertable(constant, inttype);
-                                printf("line%d.%d 常量声明语句：const int %s = %d;\n", l, cc, lastid, inum);
+                                fprintf(parse, "line%d.%d 常量声明语句：const int %s = %d;\n", l, cc, lastid, inum);
                                 getsym();
                             }
                         }
@@ -1250,7 +1276,7 @@ void constdec()//处理常量声明部分
                             else
                             {
                                 entertable(constant, chartype);
-                                printf("line%d.%d 常量声明语句：const char %s = '%c';\n", l, cc, lastid, c);
+                                fprintf(parse, "line%d.%d 常量声明语句：const char %s = '%c';\n", l, cc, lastid, c);
                                 getsym();
                             }
                         }
@@ -1295,7 +1321,7 @@ void variabledec()//处理变量声明部分
                 error(15);
             }
             entertable(variable, arraytype);
-            printf("line%d.%d 变量声明语句：%s %s[%d];\n", l, cc, symbolvalue[lastsy], lastid, inum);
+            fprintf(parse, "line%d.%d 变量声明语句：%s %s[%d];\n", l, cc, symbolvalue[lastsy], lastid, inum);
             getsym();
         }
     }
@@ -1305,7 +1331,7 @@ void variabledec()//处理变量声明部分
 			entertable(variable, inttype);
 		else
 			entertable(variable, chartype);
-        printf("line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], lastid);
+        fprintf(parse, "line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], lastid);
     }
     while(sym == comma)
     {
@@ -1331,7 +1357,7 @@ void variabledec()//处理变量声明部分
                         error(15);
                     }
                     entertable(variable, arraytype);
-                    printf("line%d.%d 变量声明语句：%s %s[%d];\n", l, cc, symbolvalue[lastsy], id, inum);
+                    fprintf(parse, "line%d.%d 变量声明语句：%s %s[%d];\n", l, cc, symbolvalue[lastsy], id, inum);
                     getsym();
                 }
             }
@@ -1341,7 +1367,7 @@ void variabledec()//处理变量声明部分
 					entertable(variable, inttype);
 				else
 					entertable(variable, chartype);
-                printf("line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], id);
+                fprintf(parse, "line%d.%d 变量声明语句：%s %s;\n", l, cc, symbolvalue[lastsy], id);
             }
         }
         else
@@ -1366,7 +1392,7 @@ void variabledec()//处理变量声明部分
 }
 void returnfctdec()//处理有返回值函数定义
 {
-    printf("line%d.%d 有返回值函数%s定义分析开始\n", l, cc, lastid);
+    fprintf(parse, "line%d.%d 有返回值函数%s定义分析开始\n", l, cc, lastid);
 	if(lastsy == intsy)
 		entertable(function, inttype);
 	else
@@ -1385,11 +1411,11 @@ void returnfctdec()//处理有返回值函数定义
 	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
-    printf("line%d.%d 有返回值函数%s定义分析完成\n", l, cc, tab[ftab[f - 1].tref].name);
+    fprintf(parse, "line%d.%d 有返回值函数%s定义分析完成\n", l, cc, tab[ftab[f - 1].tref].name);
 }
 void noreturnfctdec()//处理无返回值函数定义
 {
-    printf("line%d.%d 无返回值函数定义分析开始\n", l, cc);
+    fprintf(parse, "line%d.%d 无返回值函数定义分析开始\n", l, cc);
 	entertable(function, voidtype);
 	tvs_top = 1;
     parameterlist();
@@ -1405,7 +1431,7 @@ void noreturnfctdec()//处理无返回值函数定义
 	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
-    printf("line%d.%d 无返回值函数定义分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 无返回值函数定义分析完成\n", l, cc);
 }
 void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
 {
@@ -1427,7 +1453,7 @@ void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
 				else
 					entertable(variable, chartype);
 				ifpar = 0;
-                printf("line%d.%d 函数参数：%s %s\n", l, cc, symbolvalue[lastsy], id);
+                fprintf(parse, "line%d.%d 函数参数：%s %s\n", l, cc, symbolvalue[lastsy], id);
                 getsym();
             }
             else
@@ -1447,7 +1473,7 @@ void parameterlist()//处理函数参数，将形参及其有关信息登录到符号表中
     }while(sym == comma);
     if(sym == rparent)
     {
-        printf("line%d.%d 参数表处理完成，共有%d个参数\n", l, cc, i);
+        fprintf(parse, "line%d.%d 参数表处理完成，共有%d个参数\n", l, cc, i);
         ftab[f].parnum = i;
     }
     else
@@ -1481,7 +1507,7 @@ void maindec()
 	}
     if(tab[t-1].link != 0)
         tab[t-1].link = 2;
-    printf("line%d.%d main函数分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d main函数分析完成\n", l, cc);
 }
 void compoundstatement()
 {
@@ -1495,7 +1521,7 @@ void compoundstatement()
     {
         constdec();
     }
-    printf("line%d.%d 函数中常量声明部分处理完毕\n", l, cc);
+    fprintf(parse, "line%d.%d 函数中常量声明部分处理完毕\n", l, cc);
     while(sym == intsy || sym == charsy)
     {
         lastsy = sym;
@@ -1539,11 +1565,11 @@ void compoundstatement()
             getsym();
         }
     }
-    printf("line%d.%d 函数内变量声明处理完毕\n", l, cc);
+    fprintf(parse, "line%d.%d 函数内变量声明处理完毕\n", l, cc);
     statementlist();//已经读了第一个符号
     if(sym == rbrace)
     {
-        printf("line%d.%d 复合语句处理完毕\n", l, cc);
+        fprintf(parse, "line%d.%d 复合语句处理完毕\n", l, cc);
     }
     else
     {
@@ -1553,7 +1579,7 @@ void compoundstatement()
 void statementlist()//预读一个
 {
     int i = 0;
-	printf("line%d.%d 语句列识别开始\n", l, cc);
+	fprintf(parse, "line%d.%d 语句列识别开始\n", l, cc);
     while(i == 0 || sym == ident || sym == ifsy || sym == dosy || sym == forsy || sym == scanfsy
         || sym == printfsy || sym == returnsy || sym == lbrace || sym == semicolon)
     {
@@ -1565,7 +1591,7 @@ void statementlist()//预读一个
     }
 	if(sym != rbrace)
 		error(20);
-    printf("line%d.%d 语句列识别结束\n", l, cc);
+    fprintf(parse, "line%d.%d 语句列识别结束\n", l, cc);
 }
 void statement()//预读一个，多读一个
 {
@@ -1666,7 +1692,7 @@ void statement()//预读一个，多读一个
         statementlist();
         if(sym == rbrace)
         {
-            printf("line%d.%d 语句中的语句列处理完毕\n", l, cc);
+            fprintf(parse, "line%d.%d 语句中的语句列处理完毕\n", l, cc);
         }
         else
         {
@@ -1718,7 +1744,7 @@ void ifstatement()//预读一个，多读一个
 	{
 		gen("LABEL", "", "", tolabel(locallabel1));
 	}
-    printf("line%d.%d if [else]语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d if [else]语句分析完成\n", l, cc);
 }
 void dostatement()//预读一个，多读一个
 {
@@ -1740,7 +1766,7 @@ void dostatement()//预读一个，多读一个
 		return;
     if(sym == rparent)
     {
-        printf("line%d.%d do while语句分析完成\n", l, cc);
+        fprintf(parse, "line%d.%d do while语句分析完成\n", l, cc);
     }
     else
     {
@@ -1789,9 +1815,10 @@ void forstatement()//预读一个，多读一个
 	{
 		return;
 	}
-	gen("=", tempvar(lasttemp, 1), "", totable(localtabx, 3));
-	//gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
-	//lasttemp = tvs_top++;
+	if(exptype == con_int || exptype == con_char)
+		gen("=", inttoa(lastcontent, 1), "", totable(localtabx, 3));
+	else
+		gen("=", tempvar(lasttemp, 1), "", totable(localtabx, 3));
 	gen("LABEL", "", "", tolabel(labx));
 	locallabel1 = labx++;
     if(sym != semicolon)
@@ -1885,48 +1912,57 @@ void forstatement()//预读一个，多读一个
     statement();
 	if(localsym == plus)
 	{
-		gen("+", totable(localtabx1, 1), inttoa(localnum), totable(localtabx, 3));
+		gen("+", totable(localtabx1, 1), inttoa(localnum, 2), totable(localtabx, 3));
 	}
 	else
 	{
-		gen("-", totable(localtabx1, 1), inttoa(localnum), totable(localtabx, 3));
+		gen("-", totable(localtabx1, 1), inttoa(localnum, 2), totable(localtabx, 3));
 	}
 	gen("J", "", "", tolabel(locallabel1));
 	gen("LABEL", "", "", tolabel(locallabel2));
-    printf("line%d.%d for语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d for语句分析完成\n", l, cc);
 }
 int condition(int n)//没有预读，多读一个
 {
 	enum symbol localsym;
-	int lefttemp;
+	char leftcontent[30], rightcontent[30];
 	getsym();
     expression();
 	if(lasttype == no_type)
-	{
 		return -1;
+	if(exptype == con_int || exptype == con_char)
+	{
+		gen("=", inttoa(lastcontent, 1), "", tempvar(tvs_top, 3));
+		lasttemp = tvs_top++;
 	}
-	lefttemp = lasttemp;
+	strcpy_s(leftcontent, 30, tempvar(lasttemp, 1));
     if(sym == eql || sym == neq || sym == gtr
     || sym == geq || sym == lss || sym == leq)
     {
         localsym = sym;
 		getsym();
         expression();
+		if(lasttype == no_type)
+			return -1;
+		if(exptype == con_int || exptype == con_char)
+			strcpy_s(rightcontent, 30, inttoa(lastcontent, 1));
+		else
+			strcpy_s(rightcontent, 30, tempvar(lasttemp, 1));
 		if(n == -1)//label未建立，条件为反
 		{
 			switch(localsym)
 			{
-			case eql:gen("!=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case eql:gen("!=", leftcontent, rightcontent, tolabel(labx++));
 				break;
-			case neq:gen("==", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case neq:gen("==", leftcontent, rightcontent, tolabel(labx++));
 				break;
-			case gtr:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case gtr:gen("<=", leftcontent, rightcontent, tolabel(labx++));
 				break;
-			case geq:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case geq:gen("<", leftcontent, rightcontent, tolabel(labx++));
 				break;
-			case lss:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case lss:gen(">=", leftcontent, rightcontent, tolabel(labx++));
 				break;
-			case leq:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(labx++));
+			case leq:gen(">", leftcontent, rightcontent, tolabel(labx++));
 				break;
 			}
 		}
@@ -1934,17 +1970,17 @@ int condition(int n)//没有预读，多读一个
 		{
 			switch(localsym)
 			{
-			case eql:gen("==", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case eql:gen("==", leftcontent, rightcontent, tolabel(n));
 				break;
-			case neq:gen("!=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case neq:gen("!=", leftcontent, rightcontent, tolabel(n));
 				break;
-			case gtr:gen(">", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case gtr:gen(">", leftcontent, rightcontent, tolabel(n));
 				break;
-			case geq:gen(">=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case geq:gen(">=", leftcontent, rightcontent, tolabel(n));
 				break;
-			case lss:gen("<", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case lss:gen("<", leftcontent, rightcontent, tolabel(n));
 				break;
-			case leq:gen("<=", tempvar(lefttemp, 1), tempvar(lasttemp, 2), tolabel(n));
+			case leq:gen("<=", leftcontent, rightcontent, tolabel(n));
 				break;
 			}
 		}
@@ -1953,20 +1989,20 @@ int condition(int n)//没有预读，多读一个
 	{
 		if(n == -1)
 		{
-			gen("==", tempvar(lefttemp, 1), "0", tolabel(labx++));
+			gen("==", leftcontent, "0", tolabel(labx++));
 		}
 		else
 		{
-			gen("!=", tempvar(lefttemp, 1), "0", tolabel(n));
+			gen("!=", leftcontent, "0", tolabel(n));
 		}
 	}
-    printf("line%d.%d 条件分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 条件分析完成\n", l, cc);
 	return labx - 1;
 }
 void assignment()//预读到=或[，多读一个
 {
     enum type lefttype;
-	int indextemp;
+	char indexcontent[30];
 	int localtabx;
 	if(sym == becomes)
     {
@@ -1992,9 +2028,10 @@ void assignment()//预读到=或[，多读一个
 				getsym();
 			return;
 		}
-		gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
-		//gen("=", totable(localtabx, 1), "", tempvar(tvs_top, 3));
-		//lasttemp = tvs_top++;
+		if(exptype == con_char || exptype == con_int)
+			gen("=", inttoa(lastcontent, 1), "", totable(localtabx, 3));
+		else
+			gen("=", tempvar(lasttemp, 2), "", totable(localtabx, 3));
 		exptype = lefttype;
     }
     else if(sym == lbrack)
@@ -2015,13 +2052,22 @@ void assignment()//预读到=或[，多读一个
 		localtabx = cur_tabx;
         getsym();
         expression();
+		if(lasttype == no_type)
+		{
+			while(sym != semicolon && sym != rbrace && sym != end)
+				getsym();
+			return;
+		}
+		if(exptype == con_int || exptype == con_char)
+			strcpy_s(indexcontent, 30, inttoa(lastcontent, 1));
+		else
+			strcpy_s(indexcontent, 30, tempvar(lasttemp, 1));
         if(sym != rbrack)
         {
 			while(sym != semicolon && sym != rbrace && sym != end)
 				getsym();
 			return;
         }
-		indextemp = lasttemp;
         getsym();
         if(sym != becomes)
         {
@@ -2037,12 +2083,13 @@ void assignment()//预读到=或[，多读一个
 				getsym();
 			return;
 		}
-		gen("[]=", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(lasttemp, 3));
-		//gen("=[]", totable(localtabx, 1), tempvar(indextemp, 2), tempvar(tvs_top, 3));
-		//lasttemp = tvs_top++;
+		if(exptype == con_char || exptype == con_int)
+			gen("[]=", totable(localtabx, 1), indexcontent, inttoa(lastcontent, 3));
+		else
+			gen("[]=", totable(localtabx, 1), indexcontent, tempvar(lasttemp, 3));
 		exptype = lefttype;
     }
-    printf("line%d.%d 赋值语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 赋值语句分析完成\n", l, cc);
 }
 void readstatement()//预读一个，多读一个
 {
@@ -2082,7 +2129,7 @@ void readstatement()//预读一个，多读一个
 		return;
     }
     getsym();
-    printf("line%d.%d scanf语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d scanf语句分析完成\n", l, cc);
 }
 void writestatement()//预读一个，多读一个
 {
@@ -2110,8 +2157,12 @@ void writestatement()//预读一个，多读一个
 			}
 			if(exptype == inttype)
 				gen("WRITE INT", "", "", tempvar(lasttemp, 3));
-			else
+			else if(exptype == chartype)
 				gen("WRITE CHAR", "", "", tempvar(lasttemp, 3));
+			else if(exptype == con_int)
+				gen("WRITE INT", "", "", inttoa(lastcontent, 3));
+			else
+				gen("WRITE CHAR", "", "", inttoa(lastcontent, 3));
             if(sym != rparent)
             {
                 error(17);
@@ -2119,11 +2170,11 @@ void writestatement()//预读一个，多读一个
 					getsym();
 				return;
             }
-            printf("line%d.%d printf语句分析完成\n", l, cc);
+            fprintf(parse, "line%d.%d printf语句分析完成\n", l, cc);
         }
         else if(sym == rparent)
         {
-            printf("line%d.%d printf语句分析完成\n", l, cc);
+            fprintf(parse, "line%d.%d printf语句分析完成\n", l, cc);
         }
         else
         {
@@ -2142,8 +2193,12 @@ void writestatement()//预读一个，多读一个
 		}
 		if(exptype == inttype)
 			gen("WRITE INT", "", "", tempvar(lasttemp, 3));
-		else
+		else if(exptype == chartype)
 			gen("WRITE CHAR", "", "", tempvar(lasttemp, 3));
+		else if(exptype == con_int)
+			gen("WRITE INT", "", "", inttoa(lastcontent, 3));
+		else
+			gen("WRITE CHAR", "", "", inttoa(lastcontent, 3));
         if(sym != rparent)
         {
             error(17);
@@ -2151,13 +2206,14 @@ void writestatement()//预读一个，多读一个
 				getsym();
 			return;
         }
-        printf("line%d.%d printf语句分析完成\n", l, cc);
+        fprintf(parse, "line%d.%d printf语句分析完成\n", l, cc);
     }
     getsym();
 }
 void returnstatement()//预读一个，多读一个
 {
-    getsym();
+    char returncontent[30];
+	getsym();
     if(sym == lparent)
     {
         if(tab[ftab[f].tref].typ == voidtype)
@@ -2167,6 +2223,12 @@ void returnstatement()//预读一个，多读一个
 		}
 		getsym();
         expression();
+		if(lasttype == no_type)
+			return;
+		if(exptype == con_int || exptype == con_char)
+			strcpy_s(returncontent, 30, inttoa(lastcontent, 1));
+		else
+			strcpy_s(returncontent, 30, tempvar(lasttemp, 1));
         if(sym != rparent)
         {
             error(17);
@@ -2175,9 +2237,9 @@ void returnstatement()//预读一个，多读一个
 			return;
         }
 		if(tab[ftab[f].tref].typ == inttype)
-			gen("RETURN INT", "", "", tempvar(lasttemp, 3));
+			gen("RETURN INT", "", "", returncontent);
 		else
-			gen("RETURN CHAR", "", "", tempvar(lasttemp, 3));
+			gen("RETURN CHAR", "", "", returncontent);
         getsym();
     }
     else if(sym == semicolon)
@@ -2194,7 +2256,7 @@ void returnstatement()//预读一个，多读一个
         error(30);
         getsym();
     }
-    printf("line%d.%d return语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d return语句分析完成\n", l, cc);
 }
 void callfctstatement()//预读到(
 {
@@ -2217,29 +2279,35 @@ void callfctstatement()//预读到(
 		return;
     }
 	if(localtype == function_int)
-		gen("CALL INT FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
+		gen("CALL INT FUNC", inttoa(parnum, 1), "", tofunc(cur_func, 3));
 	else if(localtype == function_char)
-		gen("CALL CHAR FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
+		gen("CALL CHAR FUNC", inttoa(parnum, 1), "", tofunc(cur_func, 3));
 	else
-		gen("CALL VOID FUNC", inttoa(parnum), "", tofunc(cur_func, 3));
+		gen("CALL VOID FUNC", inttoa(parnum, 1), "", tofunc(cur_func, 3));
     getsym();
-    printf("line%d.%d 有返回值函数调用语句分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 有返回值函数调用语句分析完成\n", l, cc);
 }
 int valueparalist()//没有预读，多读一个
 {
     int cur_tref = ftab[cur_func].tref;
 	int parnum = ftab[cur_func].parnum;
-	int i = 0, listindex = 0;
-	enum type typelist[MAX_PAR_NUM];
-	int lasttemplist[MAX_PAR_NUM];
+	int listindex = 0;
 	do{
         getsym();
         if(sym == rparent)
             break;
         expression();
 		//由于int和char可以相互转化，所以类型无需检查
-		typelist[listindex] = exptype;
-		lasttemplist[listindex] = lasttemp;
+		if(lasttype == no_type)
+			return -1;
+		if(exptype == inttype)
+			gen("REAL PAR INT", "", "", tempvar(lasttemp, 3));
+		else if(exptype == chartype)
+			gen("REAL PAR CHAR", "", "", tempvar(lasttemp, 3));
+		else if(exptype == con_int)
+			gen("REAL PAR INT", "", "", inttoa(lastcontent, 3));
+		else
+			gen("REAL PAR CHAR", "", "", inttoa(lastcontent, 3));
 		listindex++;
     }while(sym == comma);
 	if(listindex != parnum)
@@ -2248,13 +2316,6 @@ int valueparalist()//没有预读，多读一个
 	}
 	else
 	{
-		for(i = 0; i < listindex; i++)
-		{
-			if(typelist[i] == inttype)
-				gen("REAL PAR INT", "", "", tempvar(lasttemplist[i], 3));
-			else
-				gen("REAL PAR CHAR", "", "", tempvar(lasttemplist[i], 3));
-		}
 		return listindex;
 	}
 }
@@ -2263,6 +2324,8 @@ void expression()//预读一个，多读一个
     enum symbol localsy = notsy;
 	int localtemp;
 	enum type lastexptype;
+	char op[2];
+	char localcontent;
 	if(sym == plus || sym == minus)
     {
         localsy = sym;
@@ -2275,12 +2338,20 @@ void expression()//预读一个，多读一个
 	}
 	if(localsy == minus)
 	{
-		gen("-", "0", tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+		if(exptype == con_int || exptype == con_char)
+		{
+			gen("-", "0", inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+		}
+		else
+		{
+			gen("-", "0", tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+		}
 		lasttemp = tvs_top++;
 		exptype = inttype;
 	}
 	localtemp = lasttemp;
 	lastexptype = exptype;
+	localcontent = lastcontent;
     while(sym == plus || sym == minus)
     {
         localsy = sym;
@@ -2292,28 +2363,50 @@ void expression()//预读一个，多读一个
 		}
 		if(localsy == plus)
 		{
-			gen("+", tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
-			lasttemp = tvs_top++;
-			localtemp = lasttemp;
-			exptype = inttype;
-			lastexptype = exptype;
+			op[0] = '+';
 		}
 		else
 		{
-			gen("-", tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
-			lasttemp = tvs_top++;
-			localtemp = lasttemp;
-			exptype = inttype;
-			lastexptype = exptype;
+			op[0] = '-';
 		}
+		op[1] = '\0';
+		if(lastexptype == con_int || lastexptype == con_char)
+		{
+			if(exptype == con_char || exptype == con_int)
+			{
+				gen(op, inttoa(localcontent, 1), inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+			}
+			else
+			{
+				gen(op, inttoa(localcontent, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			}
+		}
+		else
+		{
+			if(exptype == con_char || exptype == con_int)
+			{
+				gen(op, tempvar(localtemp, 1), inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+			}
+			else
+			{
+				gen(op, tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			}
+		}
+		lasttemp = tvs_top++;
+		localtemp = lasttemp;
+		exptype = inttype;
+		lastexptype = exptype;
+		localcontent = lastcontent;
     }
-    printf("line%d.%d 表达式分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 表达式分析完成\n", l, cc);
 }
 void term()//预读一个，多读一个
 {
     enum symbol localsy;
+	int localcontent;
 	int localtemp;
 	enum type lastexptype;
+	char op[2];
 	factor();
 	if(lasttype == no_type)
 	{
@@ -2321,6 +2414,7 @@ void term()//预读一个，多读一个
 	}
 	localtemp = lasttemp;
 	lastexptype = exptype;
+	localcontent = lastcontent;
     while(sym == times || sym == div)
     {
         localsy = sym;
@@ -2332,22 +2426,42 @@ void term()//预读一个，多读一个
 		}
 		if(localsy == times)
 		{
-			gen("*", tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
-			lasttemp = tvs_top++;
-			localtemp = lasttemp;
-			exptype = inttype;
-			lastexptype = exptype;
+			op[0] = '*';
 		}
 		else
 		{
-			gen("/", tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
-			lasttemp = tvs_top++;
-			localtemp = lasttemp;
-			exptype = inttype;
-			lastexptype = exptype;
+			op[0] = '/';
 		}
+		op[1] = '\0';
+		if(lastexptype == con_int || lastexptype == con_char)
+		{
+			if(exptype == con_int || exptype == con_char)
+			{
+				gen(op, inttoa(localcontent, 1), inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+			}
+			else
+			{
+				gen(op, inttoa(localcontent, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			}
+		}
+		else
+		{
+			if(exptype == con_int || exptype == con_char)
+			{
+				gen(op, tempvar(localtemp, 1), inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+			}
+			else
+			{
+				gen(op, tempvar(localtemp, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			}
+		}
+		lasttemp = tvs_top++;
+		localtemp = lasttemp;
+		exptype = inttype;
+		lastexptype = exptype;
+		localcontent = lastcontent;
     }
-    printf("line%d.%d 项分析完成\n", l, cc);
+    fprintf(parse, "line%d.%d 项分析完成\n", l, cc);
 }
 void factor()//预读一个，多读一个
 {
@@ -2374,7 +2488,7 @@ void factor()//预读一个，多读一个
             expression();
             if(sym == rbrack)
             {
-                printf("line%d.%d 因子为<标识符>[<表达式>]的形式\n", l, cc);
+                fprintf(parse, "line%d.%d 因子为<标识符>[<表达式>]的形式\n", l, cc);
             }
             else
             {
@@ -2383,7 +2497,10 @@ void factor()//预读一个，多读一个
 					getsym();
 				return;
             }
-			gen("=[]", totable(localtabx, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
+			if(exptype == con_char || exptype == con_int)
+				gen("=[]", totable(localtabx, 1), inttoa(lastcontent, 2), tempvar(tvs_top, 3));
+			else
+				gen("=[]", totable(localtabx, 1), tempvar(lasttemp, 2), tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == array_int)
 				exptype = inttype;
@@ -2404,7 +2521,7 @@ void factor()//预读一个，多读一个
 			}
 			localtype = lasttype;
 			callfctstatement();
-            printf("line%d.%d 因子为<有返回值函数调用语句>的形式\n", l, cc);
+            fprintf(parse, "line%d.%d 因子为<有返回值函数调用语句>的形式\n", l, cc);
 			gen("=CALL", tofunc(cur_func, 1), "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(localtype == function_int)
@@ -2423,7 +2540,7 @@ void factor()//预读一个，多读一个
 					getsym();
 				return;
 			}
-			printf("line%d.%d 因子为<标识符>的形式\n", l, cc);
+			fprintf(parse, "line%d.%d 因子为<标识符>的形式\n", l, cc);
 			gen("=", totable(cur_tabx, 1), "", tempvar(tvs_top, 3));
 			lasttemp = tvs_top++;
 			if(lasttype == constant_int || lasttype == variable_int)
@@ -2438,7 +2555,7 @@ void factor()//预读一个，多读一个
         expression();
         if(sym == rparent)
         {
-            printf("line%d.%d 因子是(<表达式>)的形式\n", l, cc);
+            fprintf(parse, "line%d.%d 因子是(<表达式>)的形式\n", l, cc);
         }
         else
         {
@@ -2451,10 +2568,9 @@ void factor()//预读一个，多读一个
     }
     else if(sym == charcon)
     {
-        printf("line%d.%d 因子是一个字符\n", l, cc);
-		gen("=", inttoa(c-'\0'), "", tempvar(tvs_top, 3));
-		lasttemp = tvs_top++;
-		exptype = chartype;
+        fprintf(parse, "line%d.%d 因子是一个字符\n", l, cc);
+		exptype = con_char;
+		lastcontent = c;
         getsym();
     }
     else if(sym == plus || sym == minus)
@@ -2463,7 +2579,7 @@ void factor()//预读一个，多读一个
         getsym();
         if(sym == intcon)
         {
-            printf("line%d.%d 因子是一个整数\n", l, cc);
+            fprintf(parse, "line%d.%d 因子是一个整数\n", l, cc);
         }
         else
         {
@@ -2474,17 +2590,15 @@ void factor()//预读一个，多读一个
         }
 		if(lastsy == minus)
 			inum *= -1;
-		gen("=", inttoa(inum), "", tempvar(tvs_top, 3));
-		lasttemp = tvs_top++;
-		exptype = inttype;
+		exptype = con_int;
+		lastcontent = inum;
         getsym();
     }
     else if(sym == intcon)
     {
-        printf("line%d.%d 因子是一个整数\n", l, cc);
-		gen("=", inttoa(inum), "", tempvar(tvs_top, 3));
-		lasttemp = tvs_top++;
-		exptype = inttype;
+        fprintf(parse, "line%d.%d 因子是一个整数\n", l, cc);
+		exptype = con_int;
+		lastcontent = inum;
         getsym();
     }
     else
@@ -2567,6 +2681,7 @@ void printcode()
 		fprintf(mid, "index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
 			codes[i].arg1, codes[i].arg2, codes[i].result);
 	}
+	fclose(mid);
 }
 void printmipscode()
 {
@@ -2602,7 +2717,7 @@ void printmipscode()
 		else if(strcmp(codes[i].type, "INT") == 0 || strcmp(codes[i].type, "INT[]") == 0
 			|| strcmp(codes[i].type, "CHAR") == 0 || strcmp(codes[i].type, "CHAR[]") == 0)
 		{
-			fprintf(fout, "# INT || CHAR\n");
+			//fprintf(fout, "# INT || CHAR\n");
 		}
 		else if(strcmp(codes[i].type, "VOID FUNC") == 0 || strcmp(codes[i].type, "INT FUNC") == 0
 			|| strcmp(codes[i].type, "CHAR FUNC") == 0)
@@ -2630,7 +2745,7 @@ void printmipscode()
 		}
 		else if(strcmp(codes[i].type, "PAR INT") == 0 || strcmp(codes[i].type, "PAR CHAR") == 0)
 		{
-			fprintf(fout, "# PAR INT || PAR CHAR\n");
+			//fprintf(fout, "# PAR INT || PAR CHAR\n");
 		}
 		else if(strcmp(codes[i].type, "=") == 0)
 		{
@@ -2680,7 +2795,11 @@ void printmipscode()
 			index1 = intfromtabx(codes[i].arg2);
 			index2 = intfromtabx(codes[i].result);
 			//读取t
-			if(codes[i].result[1] == 's')
+			if(codes[i].result[0] != '$')
+			{
+				fprintf(fout, "li $t0, %s\n", codes[i].result);
+			}
+			else if(codes[i].result[1] == 's')
 			{
 				if(index2 < ftab[0].tref)
 				{
@@ -2696,7 +2815,11 @@ void printmipscode()
 				fprintf(fout, "lw $t0, %d($t8)\n", index2 * 4 > 0 ? -4 * index2 : 0);
 			}
 			//读取n
-			if(codes[i].arg2[1] == 's')
+			if(codes[i].arg2[0] != '$')
+			{
+				fprintf(fout, "li $t1, %s\n", codes[i].arg2);
+			}
+			else if(codes[i].arg2[1] == 's')
 			{
 				if(index1 < ftab[0].tref)
 				{
@@ -2732,7 +2855,11 @@ void printmipscode()
 			index1 = intfromtabx(codes[i].arg2);
 			index2 = intfromtabx(codes[i].result);
 			//读取n
-			if(codes[i].arg2[1] == 's')
+			if(codes[i].arg2[0] != '$')
+			{
+				fprintf(fout, "li $t1, %s\n", codes[i].arg2);
+			}
+			else if(codes[i].arg2[1] == 's')
 			{
 				if(index1 < ftab[0].tref)
 				{
@@ -2783,7 +2910,11 @@ void printmipscode()
 			index = intfromtabx(codes[i].arg1);
 			index1 = intfromtabx(codes[i].arg2);
 			index2 = intfromtabx(codes[i].result);
-			if(codes[i].arg1[1] == 's')
+			if(codes[i].arg1[0] != '$')
+			{
+				fprintf(fout, "li $t0, %s\n", codes[i].arg1);
+			}
+			else if(codes[i].arg1[1] == 's')
 			{
 				if(index < ftab[0].tref)
 				{
@@ -2826,22 +2957,24 @@ void printmipscode()
 			}
 			else if(strcmp(codes[i].type, "-") == 0)
 			{
-				if(codes[i].arg2[0] == '$' && strcmp(codes[i].arg1, "0") != 0)
+				if(codes[i].arg2[0] == '$')
 					fprintf(fout, "sub $t2, $t0, $t1\n");
-				else if(strcmp(codes[i].arg1, "0") != 0)
-					fprintf(fout, "subi $t2, $t0, %s\n", codes[i].arg2);
-				else if(codes[i].arg2[0] == '$' && strcmp(codes[i].arg1, "0") == 0)
-					fprintf(fout, "sub $t2, $0, $t1\n");
 				else
-					fprintf(fout, "subi $t2, $0, %s\n", codes[i].arg2);
+					fprintf(fout, "subi $t2, $t0, %s\n", codes[i].arg2);
 			}
 			else if(strcmp(codes[i].type, "*") == 0)
 			{
-				fprintf(fout, "mul $t2, $t0, $t1\n");
+				if(codes[i].arg2[0] == '$')
+					fprintf(fout, "mul $t2, $t0, $t1\n");
+				else
+					fprintf(fout, "mul $t2, $t0, %s\n", codes[i].arg2);
 			}
 			else if(strcmp(codes[i].type, "/") == 0)
 			{
-				fprintf(fout, "div $t2, $t0, $t1\n");
+				if(codes[i].arg2[0] == '$')
+					fprintf(fout, "div $t2, $t0, $t1\n");
+				else
+					fprintf(fout, "div $t2, $t0, %s\n", codes[i].arg2);
 			}
 			if(codes[i].result[1] == 's')
 			{
@@ -2951,7 +3084,11 @@ void printmipscode()
 		{
 			fprintf(fout, "# real par\n");
 			index = intfromtabx(codes[i].result);
-			if(codes[i].result[1] == 's')
+			if(codes[i].result[0] != '$')
+			{
+				fprintf(fout, "li $t0, %s\n", codes[i].result);
+			}
+			else if(codes[i].result[1] == 's')
 			{
 				if(index < ftab[0].tref)
 				{
@@ -3006,7 +3143,11 @@ void printmipscode()
 			if(strcmp(codes[i].type, "RETURN VOID") != 0)
 			{
 				index = intfromtabx(codes[i].result);
-				if(codes[i].result[1] == 's')
+				if(codes[i].result[0] != '$')
+				{
+					fprintf(fout, "li $t0, %s\n", codes[i].result);
+				}
+				else if(codes[i].result[1] == 's')
 				{
 					if(index < ftab[0].tref)
 					{
@@ -3038,7 +3179,11 @@ void printmipscode()
 		{
 			fprintf(fout, "# WRITE\n");
 			index = intfromtabx(codes[i].result);
-			if(codes[i].result[1] == 's')
+			if(codes[i].result[0] != '$')
+			{
+				fprintf(fout, "li $a0, %s\n", codes[i].result);
+			}
+			else if(codes[i].result[1] == 's')
 			{
 				if(index < ftab[0].tref)
 				{
