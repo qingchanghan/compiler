@@ -1,0 +1,46 @@
+void _do_while()
+{
+	int i, j;
+	i = 0;
+	printf(" do while ");
+	do{
+		j = 0;
+		do{
+			printf(" i j ", i);
+			printf(" ", j);
+			j = j + 1;
+		}while(j < 3)
+		i = i + 1;
+	}while(i < 3)
+}
+void _for()
+{
+	int i, j;
+	printf(" for ");
+	for(i = 0; i < 3; i = i + 1)
+		for(j = 0; j < 3; j = j + 1)
+		{
+			printf(" i j ", i);
+			printf(" ", j);
+		}
+}
+void _if_else()
+{
+	int i, j, k;
+	i = 2;
+	j = 4;
+	k = 5;
+	if(i < j)
+		if(i < k)
+			printf("ok");
+}
+void func()
+{}
+void func1()
+{;}
+void main()
+{
+	_do_while();
+	_for();
+	_if_else();
+}

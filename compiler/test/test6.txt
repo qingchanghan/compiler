@@ -1,0 +1,16 @@
+const int a = 1, b;
+const char c = 'c', d = 97;
+int e = 1;
+int func()
+{
+
+}
+int f[12];
+void func1()
+{
+
+}
+void main()
+{
+
+}

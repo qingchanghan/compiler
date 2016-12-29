@@ -1,0 +1,26 @@
+int list[10];
+int get()
+{
+	return (-2);
+}
+void init()
+{
+	int i;
+	for(i = 0; i < 10; i = i + 1)
+		list[i] = i;
+}
+void main()
+{
+	int a, b;
+	char c1, c2;
+	init();
+	scanf(b, c1);
+	a = + -2 * 3 + -3 * get() * -5;
+	printf(" a: ", a);
+	a = - -2 * list[4] / b + ('a' * get());
+	printf(" a: ", a);
+	a = 'a' + 'b' + ('c'*-2);
+	printf(" a: ", a);
+	a = get() * -3 / 4;
+	printf(" a: ", a);
+}

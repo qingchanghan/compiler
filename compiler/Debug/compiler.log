@@ -1,12 +1,74 @@
-﻿生成启动时间为 2016/12/18 20:35:24。
+﻿生成启动时间为 2016/12/29 22:55:14。
      1>项目“C:\Users\Qingchang Han\documents\visual studio 2010\Projects\compiler\compiler\compiler.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Debug\compiler.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
        ClCompile:
          C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TC /analyze- /errorReport:prompt main.c
          main.c
-     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(241): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(262): warning C4996: 'scanf': This function or variable may be unsafe. Consider using scanf_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  c:\program files (x86)\microsoft visual studio 10.0\vc\include\stdio.h(304) : 参见“scanf”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3357): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3358): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3413): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3416): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3440): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3443): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3468): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3493): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3515): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3518): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3540): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3543): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3565): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3585): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3632): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3638): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3640): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3646): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3648): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3650): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3653): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3654): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3655): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3659): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3660): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3661): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3665): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3670): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3671): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3672): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>c:\users\qingchang han\documents\visual studio 2010\projects\compiler\compiler\main.c(3673): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 c:\program files (x86)\microsoft visual studio 10.0\vc\include\string.h(105) : 参见“strcpy”的声明
        ManifestResourceCompile:
          所有输出均为最新。
        Link:
@@ -25,4 +87,4 @@
 
 生成成功。
 
-已用时间 00:00:01.48
+已用时间 00:00:00.76

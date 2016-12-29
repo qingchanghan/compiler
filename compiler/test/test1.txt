@@ -1,0 +1,39 @@
+const int A = 1, B = 10;
+int a[10];
+int fib1(int n)
+{
+	int i;
+	if(n > 9)
+	{
+		printf("n is too big");
+		return (-1);
+	}
+	a[1] = 1;
+	a[2] = 1;
+	for(i = 3; i <= n; i = i + 1)
+		a[i] = a[i - 1] + a[i - 2];
+	return (a[n]);
+}
+int fib2(int n)
+{
+	int i;
+	if(n == 1)
+		return (1);
+	if(n == 2)
+		return (1);
+	if(n > 20)
+	{
+		printf("n is too big");
+		return (-1);
+	}
+	return (fib2(n - 1) + fib2(n - 2));
+}
+void main()
+{
+	int n;
+	scanf(n);
+	printf(A);
+	printf(B);
+	printf("fib1 No.n is ", fib1(n));
+	printf("fib2 No.n is ", fib2(n));
+}

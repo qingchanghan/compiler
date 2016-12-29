@@ -1,0 +1,15 @@
+const int a = +0;
+const char b = '#';
+int c;
+int f[02];
+char e;
+void main()
+{
+	int i;
+	d = a + 1;
+	e = '_';
+	e = '(';
+	for(i = 0; i < 10; i = i + 0)
+	;
+	c = ++0;
+}

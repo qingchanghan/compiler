@@ -1,0 +1,156 @@
+const int MAX = 23, MIN = 10;
+const char _CH1 = '+';
+int gbinta[100], gbi;
+char gbchara[5], gbc;
+
+void fun(int n, char c)
+{
+	int i;
+	gbi = n;
+	i = n;
+	do{
+		i = i + 1;
+		gbi = gbi + i;
+		printf("fun: gbi:", gbi);
+		printf("|");
+	}while(i < MAX)
+	printf("fun: c:", c);
+	printf("|");
+}
+int fun1(int n)
+{
+	int sum;
+	if(n < MAX)
+	{
+		return (fun1(n+1)+n);
+	}
+	return (n);
+}
+void fun2()
+{
+	const int n = 5;
+	int i;
+	gbi = n * n / n;
+	for(i = gbi - gbi; i < n; i = i + 1)
+	{
+		gbinta[i] = i;
+		printf("fun2: gbinta:", gbinta[i]);
+		printf("|");
+	}
+	printf("fun2: c: no such variable|");
+}
+char fun3()
+{
+	printf("fun3: return a|");
+	return ('a');
+}
+void fun4(int n, int m)
+{
+	int i, j;
+	for(i = 0; i < n; i = i + 1)
+	{
+		for(j = 0; j < m; j = j + 1)
+		{
+			printf(i);
+			printf(",", j);
+			printf("|");
+		}
+	}
+}
+void fun5()
+{
+	int i, j;
+	i = ++2 + -5;
+	printf(i);
+	printf("|");
+	i = -'a'*+2;
+	printf(i);
+	printf("|");
+	i = 6 / 4;
+	printf(i);
+	printf("|");
+}
+void main()
+{
+	const int M_MAX = 20, M_MIN = 10;
+	int n1, n2, n3, n4;
+	char c1, c2, c3, c4, c5, C1;
+	int inta[100];
+	char chara[5];
+
+	
+	scanf(n1, c1);
+	scanf(n2, c2);
+	scanf(n3, c3);
+	scanf(n4, c4);
+	scanf(c5);
+	if(n1 < MAX)
+	{
+		fun(n1, c1);
+	}
+	else
+	{
+		printf("n1 >= MAX|");
+	}
+	if(n2 != MIN)
+	{
+		printf("n2 != MIN|");
+	}
+	else
+	{
+		gbi = fun1(n2);
+		printf("fun1: gbi:", gbi);
+		printf("|");
+	}
+
+	if(n3 > M_MAX)
+	{
+		printf("n3 <= M_MAX|");
+	}
+	else
+	{
+		fun(n3, c3);
+		fun1(n3);
+	}
+	if(n4 >= M_MIN)
+	{
+		C1 = fun3();
+		printf("fun3: C1:",C1);
+		printf("|");
+		printf("direct:", fun3());
+		printf("|");
+	}
+
+	if(n4 <= M_MIN)
+	{
+		printf("n4 <= M_MIN|");
+	}
+
+	if(c1 != C1)
+	{
+		printf("c1 and C1 are not equal.|");
+	}
+	if(2)
+	{
+		printf("2 is true.|");
+	}
+	if(0)
+	{
+		printf("0 is true.|");
+	}
+	else
+	{
+		printf("0 is false.|");
+	}
+	if(c5 - c1)
+	{
+		printf("c5 - c1 is true.|");
+	}
+	else
+	{
+		printf("c5 - c1 is false.|");
+	}
+	fun2();
+	fun4(2, 3);
+	fun5();
+}

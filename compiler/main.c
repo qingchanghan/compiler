@@ -12,6 +12,8 @@
 #define MAX_CODE 20000 //四元式数量最大值
 #define MAX_CODE_TYPE 20 //四元式类型最大长度
 #define MAX_PAR_NUM 10 //函数参数最大个数
+#define MAX_DAG 1000 //DAG图最大节点个数
+#define MAX_NODE 100 //最大结点个数
 enum symbol{
     notsy, plus, minus, times, div, becomes,
     eql, neq, gtr, geq, lss, leq,
@@ -76,7 +78,7 @@ const char errormessage[][50] = {
     "void后应为main或函数名", //16
     "应为')'", //17
     "应为'{'", //18
-    "int后的标识符后应为'['、','或';'", //19
+    "函数中int后的标识符后应为'['、','或';'", //19
     "应为'}'", //20
     "应为'='、'['或'('", //21
     "应为'('", //22
@@ -99,6 +101,7 @@ const char errormessage[][50] = {
 	"有返回值函数不能返回空", //39
 	"无返回值函数只能返回空", //40
 	"非法语句", //41
+	"应为无符号整数", //42
 };
 //符号表
 struct table{
@@ -166,6 +169,7 @@ struct code
 	char arg2[ILNGMAX+1];
 	char result[ILNGMAX+1];
 }codes[MAX_CODE];
+int codesflag[MAX_CODE];
 int codeindex = 0;
 
 //临时变量栈及其指针
@@ -185,6 +189,19 @@ int ifpar;
 int cur_func;//当前函数在ftab表中的位置
 int cur_tabx;//当前查询标识符在tab表中的位置
 int writechar;
+int st_block, end_block;
+struct dag{
+	char op[5];
+	int lchild, rchild;
+	int fathernum;
+	char label[8];
+}dags[MAX_DAG];
+int dagindex;
+struct node{
+	int no;
+	char var[5];
+}nodetable[MAX_NODE];
+int nodeindex;
 
 //函数声明
 void getch();//获取一个字符
@@ -230,22 +247,26 @@ void printtable();
 void printstring();
 void printcode();
 void printmipscode();
-
+void constoptimization();
+void dividebasicblock();
+void blockoptimization();
+void dagtomidcode();
+void printdags();
 
 int main()
 {
-    int i;
+	int i;
 	errno_t err;
-    char sin[FILENAME_MAX];
-    printf("please input source program file name : \n");
-    scanf("%s", sin);
-    err = fopen_s(&fin, sin, "r");
-    if(err != 0)
-    {
-        printf("Failed to open %s!\n", sin);
-        return 1;
-    }
-    printf("Open successfully!\n");
+	char sin[FILENAME_MAX];
+	printf("please input source program file name : \n");
+	scanf("%s", sin);
+	err = fopen_s(&fin, sin, "r");
+	if(err != 0)
+	{
+		printf("Failed to open %s!\n", sin);
+		return 1;
+	}
+	printf("Open successfully!\n");
 
 	err = fopen_s(&parse, "parse_result.txt", "w");
 	if(err != 0)
@@ -254,17 +275,43 @@ int main()
 		return 1;
 	}
 
-    i = 1;
-    getch();
-    program();
+	i = 1;
+	getch();
+	program();
 	printf("\n错误数量: %d个\n\n", error_num);
-    printtable();
+	printtable();
+	constoptimization();
+	//dividebasicblock();
 	printcode();
 	if(error_num == 0)
 		printmipscode();
-    fclose(fin);
+	fclose(fin);
 	fclose(parse);
 }
+//int main()
+//{
+//	int i;
+//	gen("-", "0", "c", "t1");
+//	gen("*", "b", "t1", "t2");
+//	gen("-", "0", "c", "t3");
+//	gen("*", "b", "t3", "c");
+//	gen("+", "t2", "c", "t4");
+//	gen("=", "t4", "", "a");
+//	/*gen("=[]", "a", "i", "x");
+//	gen("[]=", "a", "j", "y");
+//	gen("=[]", "a", "i", "z");*/
+//	st_block = 0;
+//	end_block = 5;
+//	blockoptimization();
+//	printdags();
+//	dagtomidcode();
+//	for(i = 0; i <= end_block; i++)
+//	{
+//		if(codesflag[i] != -1)
+//			printf("index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
+//			codes[i].arg1, codes[i].arg2, codes[i].result);
+//	}
+//}
 void getch()//获取一个字符
 {
     if(cc == ll - 1)
@@ -427,6 +474,7 @@ void getsym()
                         else
                         {
                             error(1);
+							getch();
                             while(isalpha(ch) || isdigit(ch) || ch == '_' || ch == '+' ||
                                 ch == '-' || ch == '*' || ch == '/' || ch == '\'')//略去其他字符
                             {
@@ -552,6 +600,7 @@ void getsym()
                 break;
             default:    sym = notsy;
                         error(1);
+						getch();
         }
     }
     return ;
@@ -577,8 +626,14 @@ char* inttoa(int n, int flag)
 int atoint(char s[])
 {
 	int i, sum = 0;
-	for(i = 0; s[i] != '\0' && isdigit(s[i]); i++)
+	if(s[0] == '-')
+		i = 1;
+	else
+		i = 0;
+	for(; s[i] != '\0' && isdigit(s[i]); i++)
 		sum = sum * 10 + (s[i] - '0');
+	if(s[0] == '-')
+		sum *= -1;
 	return sum;
 }
 char* tempvar(int n, int flag)
@@ -1079,8 +1134,11 @@ void program()//处理总程序
             {
                 //这里的错误处理暂时没有思路，暂时直接结束
                 error(14);
-                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
-                return;
+                //fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+				while(sym != semicolon && sym != end)
+					getsym();
+				getsym();
+                continue;
             }
         }
         else if(sym == voidsy)
@@ -1107,8 +1165,11 @@ void program()//处理总程序
             else
             {
                 error(16);
-                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
-                return;
+                //fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+				while(sym != semicolon && sym != end && sym != rbrace)
+					getsym();
+				getsym();
+                continue;
             }
         }
     }
@@ -1154,8 +1215,11 @@ void program()//处理总程序
             else
             {
                 error(16);
-                fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
-                return;
+                //fprintf(parse, "line%d.%d 遇到无法合理跳读的错误，程序结束\n", l, cc);
+				while(sym != semicolon && sym != end && sym != rbrace)
+					getsym();
+				getsym();
+                continue;
             }
         }
     }
@@ -1217,6 +1281,8 @@ void constdec()//处理常量声明部分
                                 {
                                     error(8);
                                 }
+								if(sym == intcon && inum == 0)
+									error(42);
                                 if(lastsy == minus)
                                     inum = -1 * inum;
                                 entertable(constant, inttype);
@@ -1315,7 +1381,9 @@ void variabledec()//处理变量声明部分
         }
         else
         {
-            getsym();
+            if(inum == 0)
+				error(42);
+			getsym();
             if(sym != rbrack)
             {
                 error(15);
@@ -1351,7 +1419,9 @@ void variabledec()//处理变量声明部分
                 }
                 else
                 {
-                    getsym();
+                    if(inum == 0)
+						error(42);
+					getsym();
                     if(sym != rbrack)
                     {
                         error(15);
@@ -1899,6 +1969,10 @@ void forstatement()//预读一个，多读一个
 			getsym();
 		return;
     }
+	if(sym == intcon && inum == 0)
+	{
+		error(42);
+	}
 	localnum = inum;
     getsym();
     if(sym != rparent)
@@ -2064,6 +2138,7 @@ void assignment()//预读到=或[，多读一个
 			strcpy_s(indexcontent, 30, tempvar(lasttemp, 1));
         if(sym != rbrack)
         {
+			error(15);
 			while(sym != semicolon && sym != rbrace && sym != end)
 				getsym();
 			return;
@@ -2577,10 +2652,14 @@ void factor()//预读一个，多读一个
     {
         lastsy = sym;
         getsym();
-        if(sym == intcon)
+        if(sym == intcon && inum != 0)
         {
             fprintf(parse, "line%d.%d 因子是一个整数\n", l, cc);
         }
+		else if(inum == 0)
+		{
+			error(42);
+		}
         else
         {
             error(8);
@@ -2678,7 +2757,8 @@ void printcode()
 	fprintf(mid, "midcode\n\n");
 	for(i = 0; i < codeindex; i++)
 	{
-		fprintf(mid, "index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
+		if(codesflag[i] != -1)
+			fprintf(mid, "index:%4d  (%20s,%10s,%10s,%10s)\n", i, codes[i].type, 
 			codes[i].arg1, codes[i].arg2, codes[i].result);
 	}
 	fclose(mid);
@@ -3255,4 +3335,360 @@ void printmipscode()
 		fprintf(fout, "\n");
 	}
 	fclose(fout);
+}
+void constoptimization()//常数优化
+{
+	int i, sum;
+	for(i = 0; i < codeindex; i++)
+	{
+		if(strcmp(codes[i].type, "+") == 0 || strcmp(codes[i].type, "-") == 0
+			|| strcmp(codes[i].type, "*") == 0 || strcmp(codes[i].type, "/") == 0)
+		{
+			if(codes[i].arg1[0] != '$' && codes[i].arg2[0] != '$')
+			{
+				if(strcmp(codes[i].type, "+") == 0)
+					sum = atoint(codes[i].arg1) + atoint(codes[i].arg2);
+				else if(strcmp(codes[i].type, "-") == 0)
+					sum = atoint(codes[i].arg1) - atoint(codes[i].arg2);
+				else if(strcmp(codes[i].type, "*") == 0)
+					sum = atoint(codes[i].arg1) * atoint(codes[i].arg2);
+				else if(strcmp(codes[i].type, "/") == 0)
+					sum = atoint(codes[i].arg1) / atoint(codes[i].arg2);
+				strcpy(codes[i].type, "=");
+				strcpy(codes[i].arg1, inttoa(sum, 1));
+			}
+		}
+	}
+}
+void dividebasicblock()
+{
+	//基本块划分规则：
+	// 1. 第一个指令是首指令
+	// 2. 跳转指令的目标指令 也就是LABEL指令是首指令
+	// 3. 紧跟在跳转指令或函数调用后的第一条指令是首指令
+	int i;
+	for(i = 0; i < codeindex; i++)
+	{
+		st_block = i;
+
+		while(i < codeindex && (strcmp(codes[i].type, "+") == 0 || strcmp(codes[i].type, "-") == 0
+			|| strcmp(codes[i].type, "*") == 0 || strcmp(codes[i].type, "/") == 0
+			|| strcmp(codes[i].type, "=") == 0) || strcmp(codes[i].type, "[]=") == 0
+			|| strcmp(codes[i].type, "=[]") == 0 || strcmp(codes[i].type, "<") == 0
+			|| strcmp(codes[i].type, "<=") == 0 || strcmp(codes[i].type, ">") == 0
+			|| strcmp(codes[i].type, ">=") == 0 || strcmp(codes[i].type, "==") == 0
+			|| strcmp(codes[i].type, "!=") == 0 || strcmp(codes[i].type, ""))
+		{
+			i++;
+		}
+		end_block = i;
+		printf("st:%d  end:%d\n", st_block, end_block);
+		if(st_block != end_block)
+		{
+			blockoptimization();
+		}
+	}
+}
+void blockoptimization()
+{
+	int i, j, k, lno, rno;
+	dagindex = 0;
+	nodeindex = 0;
+	for(i = st_block; i < end_block; i++)
+	{
+		if(strcmp(codes[i].type, "[]=") != 0)
+		{
+			//寻找arg1
+			for(j = 0; j < nodeindex; j++)
+			{
+				if(strcmp(codes[i].arg1, nodetable[j].var) == 0)
+					break;
+			}
+			if(j == nodeindex)//未找到
+			{
+				//DAG图中增加一个结点
+				dags[dagindex].fathernum = 0;
+				dags[dagindex].lchild = -1;
+				dags[dagindex].rchild = -1;
+				strcpy(dags[dagindex].op, codes[i].arg1);
+				//结点表中记录
+				nodetable[nodeindex].no = dagindex;
+				strcpy(nodetable[nodeindex].var, codes[i].arg1);
+				//自增
+				lno = dagindex;
+				dagindex++;
+				nodeindex++;
+			}
+			else//找到对应结点
+			{
+				lno = nodetable[j].no;
+			}
+			//寻找arg2
+			if(strcmp(codes[i].type, "=") != 0)
+			{
+				for(j = 0; j < nodeindex; j++)
+				{
+					if(strcmp(codes[i].arg2, nodetable[j].var) == 0)
+						break;
+				}
+				if(j == nodeindex)//未找到
+				{
+					//DAG图中增加一个结点
+					dags[dagindex].fathernum = 0;
+					dags[dagindex].lchild = -1;
+					dags[dagindex].rchild = -1;
+					strcpy(dags[dagindex].op, codes[i].arg2);
+					//结点表中记录
+					nodetable[nodeindex].no = dagindex;
+					strcpy(nodetable[nodeindex].var, codes[i].arg2);
+					//自增
+					rno = dagindex;
+					dagindex++;
+					nodeindex++;
+				}
+				else//找到对应结点
+				{
+					rno = nodetable[j].no;
+				}
+			}
+			//寻找op
+			if(strcmp(codes[i].type, "=") != 0)
+			{
+				for(j = 0; j < dagindex; j++)
+				{
+					if(strcmp(codes[i].type, dags[j].op) == 0 && dags[j].lchild == lno && dags[j].rchild == rno)
+						break;
+				}
+				if(j == dagindex)
+				{
+					//DAG图中新建中间结点
+					dags[j].fathernum = 0;
+					dags[j].lchild = lno;
+					dags[j].rchild = rno;
+					strcpy(dags[j].op, codes[i].type);
+					k = j;
+					dagindex++;
+					//与左子节点和右子节点相连
+					dags[lno].fathernum++;
+					dags[rno].fathernum++;
+				}
+				else
+				{
+					k = j;
+				}
+			}
+			//寻找result
+			if(strcmp(codes[i].type, "=") == 0)
+			{
+				k = lno;
+			}
+			for(j = 0; j < nodeindex; j++)
+			{
+				if(strcmp(nodetable[j].var, codes[i].result) == 0)
+					break;
+			}
+			if(j == nodeindex)//未找到
+			{
+				nodetable[j].no = k;
+				strcpy(nodetable[j].var, codes[i].result);
+				nodeindex++;
+			}
+			else
+			{
+				nodetable[j].no = k;
+			}
+		}
+		else
+		{
+			//寻找arg2
+			for(j = 0; j < nodeindex; j++)
+			{
+				if(strcmp(codes[i].arg2, nodetable[j].var) == 0)
+					break;
+			}
+			if(j == nodeindex)//未找到
+			{
+				//DAG图中增加一个结点
+				dags[dagindex].fathernum = 0;
+				dags[dagindex].lchild = -1;
+				dags[dagindex].rchild = -1;
+				strcpy(dags[dagindex].op, codes[i].arg2);
+				//结点表中记录
+				nodetable[nodeindex].no = dagindex;
+				strcpy(nodetable[nodeindex].var, codes[i].arg2);
+				//自增
+				lno = dagindex;
+				dagindex++;
+				nodeindex++;
+			}
+			else//找到对应结点
+			{
+				lno = nodetable[j].no;
+			}
+			//寻找result
+			for(j = 0; j < nodeindex; j++)
+			{
+				if(strcmp(codes[i].result, nodetable[j].var) == 0)
+					break;
+			}
+			if(j == nodeindex)//未找到
+			{
+				//DAG图中增加一个结点
+				dags[dagindex].fathernum = 0;
+				dags[dagindex].lchild = -1;
+				dags[dagindex].rchild = -1;
+				strcpy(dags[dagindex].op, codes[i].result);
+				//结点表中记录
+				nodetable[nodeindex].no = dagindex;
+				strcpy(nodetable[nodeindex].var, codes[i].result);
+				//自增
+				rno = dagindex;
+				dagindex++;
+				nodeindex++;
+			}
+			else//找到对应结点
+			{
+				rno = nodetable[j].no;
+			}
+			//寻找op
+			for(j = 0; j < dagindex; j++)
+			{
+				if(strcmp(codes[i].type, dags[j].op) == 0 && dags[j].lchild == lno && dags[j].rchild == rno)
+					break;
+			}
+			if(j == dagindex)
+			{
+				//DAG图中新建中间结点
+				dags[j].fathernum = 0;
+				dags[j].lchild = lno;
+				dags[j].rchild = rno;
+				strcpy(dags[j].op, codes[i].type);
+				k = j;
+				dagindex++;
+				//与左子节点和右子节点相连
+				dags[lno].fathernum++;
+				dags[rno].fathernum++;
+			}
+			else
+			{
+				k = j;
+			}
+			//寻找arg1
+			for(j = 0; j < nodeindex; j++)
+			{
+				if(strcmp(nodetable[j].var, codes[i].arg1) == 0)
+					break;
+			}
+			if(j == nodeindex)//未找到
+			{
+				nodetable[j].no = k;
+				strcpy(nodetable[j].var, codes[i].arg1);
+				nodeindex++;
+			}
+			else
+			{
+				nodetable[j].no = k;
+			}
+		}
+	}
+	//从DAG图导出中间代码
+	dagtomidcode();
+}
+void dagtomidcode()//DAG图重新导出中间代码
+{
+	int i, j, k, m, no;
+	int queue[MAX_NODE] = {0}, qx = 0;
+	char temp[5];
+	char arg1[5], arg2[5], result[5];
+	while(1)
+	{
+		for(i = 0; i < dagindex; i++)
+		{
+			if(dags[i].fathernum == 0 && dags[i].lchild != -1 && dags[i].rchild != -1)
+				break;
+		}
+		if(i == dagindex)
+			break;
+		while(dags[i].fathernum == 0 && dags[i].lchild != -1 && dags[i].rchild != -1)
+		{
+			queue[qx++] = i;
+			dags[i].fathernum--;
+			dags[dags[i].lchild].fathernum--;
+			dags[dags[i].rchild].fathernum--;
+			i = dags[i].lchild;
+		}
+	}
+	for(i = 0; i < qx; i++)
+		printf("qx:%d\n", queue[i]);
+	for(i = qx - 1, m = st_block; i >= 0; i--)
+	{
+		for(j = 0; j < nodeindex; j++)
+		{
+			if(nodetable[j].no == queue[i])
+				break;
+		}
+		no = nodetable[j].no;
+		//result
+		strcpy(result, nodetable[j].var);
+		//arg1
+		for(k = 0; k < nodeindex; k++)
+			if(nodetable[k].no == dags[no].lchild)
+				break;
+		if(k == nodeindex)
+			strcpy(arg1, dags[dags[no].rchild].op);
+		else
+			strcpy(arg1, nodetable[k].var);
+		//arg2
+		for(k = 0; k < nodeindex; k++)
+			if(nodetable[k].no == dags[no].rchild)
+				break;
+		if(k == nodeindex)
+			strcpy(arg2, dags[dags[no].rchild].op);
+		else
+			strcpy(arg2, nodetable[k].var);
+		//替换
+		strcpy(codes[m].type, dags[no].op);
+		if(strcmp(dags[j].op, "[]=") != 0)
+		{
+			strcpy(codes[m].arg1, arg1);
+			strcpy(codes[m].arg2, arg2);
+			strcpy(codes[m].result, result);
+		}
+		else
+		{
+			strcpy(codes[m].arg1, result);
+			strcpy(codes[m].arg2, arg1);
+			strcpy(codes[m].result, arg2);
+		}
+		m++;
+		//保存之前的result 为后面的复制做准备
+		strcpy(temp, result);
+		for(j++; j < nodeindex; j++)
+		{
+			if(nodetable[j].no == queue[i])
+			{
+				strcpy(codes[m].type, "=");
+				strcpy(codes[m].arg1, temp);
+				strcpy(codes[m].arg2, "");
+				strcpy(codes[m].result, nodetable[j].var);
+				m++;
+			}
+		}
+	}
+	printf("m:%d\n", m);
+	for(; m < end_block; m++)
+		codesflag[m] = -1;
+}
+void printdags()
+{
+	int i;
+	for(i = 0; i < dagindex; i++)
+	{
+		printf("op:%s  lno:%d  rno:%d  fathernum:%d\n", dags[i].op, dags[i].lchild, dags[i].rchild, dags[i].fathernum);
+	}
+	printf("\n\nnodetable\n");
+	for(i = 0; i < nodeindex; i++)
+	{
+		printf("var:%s  no:%d\n", nodetable[i].var, nodetable[i].no);
+	}
 }

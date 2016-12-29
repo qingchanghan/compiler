@@ -1,101 +1,22 @@
 symbol table
-id:  0   name:       cona link:    0   obj: 0   typ: 0   ref:  0   adr:     4   value:     1
-id:  1   name:       conb link:    1   obj: 0   typ: 0   ref:  0   adr:     8   value:     2
-id:  2   name:       conc link:    1   obj: 0   typ: 0   ref:  0   adr:    12   value:     3
-id:  3   name:       cong link:    1   obj: 0   typ: 0   ref:  0   adr:    16   value:     4
-id:  4   name:       conh link:    1   obj: 0   typ: 0   ref:  0   adr:    20   value:     5
-id:  5   name:       coni link:    1   obj: 0   typ: 0   ref:  0   adr:    24   value:     6
-id:  6   name:       conj link:    1   obj: 0   typ: 0   ref:  0   adr:    28   value:     7
-id:  7   name:          a link:    1   obj: 1   typ: 2   ref:  0   adr:    68   value:     0
-id:  8   name:          c link:    1   obj: 1   typ: 0   ref:  0   adr:    72   value:     0
-id:  9   name:     lalala link:    1   obj: 1   typ: 0   ref:  0   adr:    76   value:     0
-id: 10   name:  emptyfunc link:    0   obj: 2   typ: 3   ref:  0   adr:     0   value:     0
-id: 11   name: emptyfunc2 link:    0   obj: 2   typ: 3   ref:  1   adr:     0   value:     0
-id: 12   name:   testchar link:    0   obj: 2   typ: 1   ref:  2   adr:     0   value:     0
-id: 13   name:  fibonacci link:    0   obj: 2   typ: 0   ref:  3   adr:     0   value:     0
-id: 14   name:          n link:    1   obj: 1   typ: 0   ref:  0   adr:     4   value:     0
-id: 15   name:       cona link:    1   obj: 0   typ: 0   ref:  0   adr:     8   value:    -1
-id: 16   name:      testc link:    2   obj: 1   typ: 1   ref:  0   adr:    12   value:     0
-id: 17   name:       move link:    0   obj: 2   typ: 3   ref:  4   adr:     0   value:     0
-id: 18   name:          a link:    1   obj: 1   typ: 1   ref:  0   adr:     4   value:     0
-id: 19   name:          b link:    1   obj: 1   typ: 1   ref:  0   adr:     8   value:     0
-id: 20   name:   testcon1 link:    1   obj: 0   typ: 0   ref:  0   adr:    12   value:     1
-id: 21   name:   testcon2 link:    2   obj: 0   typ: 1   ref:  0   adr:    16   value:    49
-id: 22   name:      hanoi link:    0   obj: 2   typ: 3   ref:  5   adr:     0   value:     0
-id: 23   name:      hanoi link:    1   obj: 1   typ: 0   ref:  0   adr:     4   value:     0
-id: 24   name:          l link:    1   obj: 1   typ: 1   ref:  0   adr:     8   value:     0
-id: 25   name:          m link:    1   obj: 1   typ: 1   ref:  0   adr:    12   value:     0
-id: 26   name:          r link:    2   obj: 1   typ: 1   ref:  0   adr:    16   value:     0
-id: 27   name:   getpower link:    0   obj: 2   typ: 0   ref:  6   adr:     0   value:     0
-id: 28   name:          n link:    1   obj: 1   typ: 0   ref:  0   adr:     4   value:     0
-id: 29   name:         le link:    1   obj: 1   typ: 0   ref:  0   adr:     8   value:     0
-id: 30   name:       move link:    2   obj: 1   typ: 0   ref:  0   adr:    12   value:     0
-id: 31   name:     getsqr link:    0   obj: 2   typ: 0   ref:  7   adr:     0   value:     0
-id: 32   name:          n link:    1   obj: 1   typ: 0   ref:  0   adr:     4   value:     0
-id: 33   name:         _i link:    2   obj: 1   typ: 0   ref:  0   adr:     8   value:     0
-id: 34   name:       main link:    0   obj: 2   typ: 3   ref:  8   adr:     0   value:     0
-id: 35   name:       cond link:    1   obj: 0   typ: 1   ref:  0   adr:     4   value:    65
-id: 36   name:       cone link:    1   obj: 0   typ: 1   ref:  0   adr:     8   value:    66
-id: 37   name:       conf link:    1   obj: 0   typ: 1   ref:  0   adr:    12   value:    67
-id: 38   name:       con1 link:    1   obj: 0   typ: 1   ref:  0   adr:    16   value:    43
-id: 39   name:       con2 link:    1   obj: 0   typ: 1   ref:  0   adr:    20   value:    45
-id: 40   name:       con3 link:    1   obj: 0   typ: 1   ref:  0   adr:    24   value:    42
-id: 41   name:       Con3 link:    1   obj: 0   typ: 1   ref:  0   adr:    28   value:    47
-id: 42   name:    testcon link:    1   obj: 0   typ: 0   ref:  0   adr:    32   value:   100
-id: 43   name:          c link:    1   obj: 1   typ: 0   ref:  0   adr:    36   value:     0
-id: 44   name:        num link:    1   obj: 1   typ: 0   ref:  0   adr:    40   value:     0
-id: 45   name:          i link:    1   obj: 1   typ: 0   ref:  0   adr:    44   value:     0
-id: 46   name:        fib link:    1   obj: 1   typ: 0   ref:  0   adr:    48   value:     0
-id: 47   name:     testaj link:    1   obj: 1   typ: 2   ref:  1   adr:    88   value:     0
-id: 48   name:        sqr link:    1   obj: 1   typ: 0   ref:  0   adr:    92   value:     0
-id: 49   name:     testai link:    1   obj: 1   typ: 2   ref:  2   adr:   492   value:     0
-id: 50   name:         a_ link:    1   obj: 1   typ: 0   ref:  0   adr:   496   value:     0
-id: 51   name:        a_a link:    1   obj: 1   typ: 0   ref:  0   adr:   500   value:     0
-id: 52   name:         a0 link:    1   obj: 1   typ: 0   ref:  0   adr:   504   value:     0
-id: 53   name:        a00 link:    1   obj: 1   typ: 0   ref:  0   adr:   508   value:     0
-id: 54   name:    testai1 link:    1   obj: 1   typ: 0   ref:  0   adr:   512   value:     0
-id: 55   name:    testai2 link:    1   obj: 1   typ: 0   ref:  0   adr:   516   value:     0
-id: 56   name:    testai3 link:    1   obj: 1   typ: 0   ref:  0   adr:   520   value:     0
-id: 57   name:    testai4 link:    1   obj: 1   typ: 0   ref:  0   adr:   524   value:     0
-id: 58   name:    testai5 link:    1   obj: 1   typ: 0   ref:  0   adr:   528   value:     0
-id: 59   name:    testai6 link:    1   obj: 1   typ: 0   ref:  0   adr:   532   value:     0
-id: 60   name:         c1 link:    1   obj: 1   typ: 1   ref:  0   adr:   536   value:     0
-id: 61   name:         c2 link:    1   obj: 1   typ: 1   ref:  0   adr:   540   value:     0
-id: 62   name:         c3 link:    1   obj: 1   typ: 1   ref:  0   adr:   544   value:     0
-id: 63   name:         c4 link:    1   obj: 1   typ: 1   ref:  0   adr:   548   value:     0
-id: 64   name:         c5 link:    1   obj: 1   typ: 1   ref:  0   adr:   552   value:     0
-id: 65   name:         c6 link:    2   obj: 1   typ: 1   ref:  0   adr:   556   value:     0
+id:  0   name:          a link:    0   obj: 0   typ: 0   ref:  0   adr:     4   value:     0
+id:  1   name:          b link:    1   obj: 0   typ: 1   ref:  0   adr:     8   value:     0
+id:  2   name:          c link:    1   obj: 1   typ: 0   ref:  0   adr:    12   value:     0
+id:  3   name:          f link:    1   obj: 1   typ: 2   ref:  0   adr:    12   value:     0
+id:  4   name:          e link:    1   obj: 1   typ: 1   ref:  0   adr:    16   value:     0
+id:  5   name:       main link:    0   obj: 2   typ: 3   ref:  0   adr:     0   value:     0
+id:  6   name:          i link:    2   obj: 1   typ: 0   ref:  0   adr:     4   value:     0
 
 
 
 function table
-id:  0   name:  emptyfunc   tref:  10   parnum: 0   size:     0
-id:  1   name: emptyfunc2   tref:  11   parnum: 0   size:     0
-id:  2   name:   testchar   tref:  12   parnum: 0   size:     0
-id:  3   name:  fibonacci   tref:  13   parnum: 1   size:    12
-id:  4   name:       move   tref:  17   parnum: 2   size:    16
-id:  5   name:      hanoi   tref:  22   parnum: 4   size:    16
-id:  6   name:   getpower   tref:  27   parnum: 2   size:    12
-id:  7   name:     getsqr   tref:  31   parnum: 1   size:     8
-id:  8   name:       main   tref:  34   parnum: 0   size:   556
+id:  0   name:       main   tref:   5   parnum: 0   size:     4
 
 
 
 array table
-id:  0   name:          a   tref:   7   eltyp: 0   high:    10
-id:  1   name:     testaj   tref:  47   eltyp: 0   high:    10
-id:  2   name:     testai   tref:  49   eltyp: 0   high:   100
+id:  0   name:          f   tref:   3   eltyp: 0   high:     0
 
 
 
 string table
-id:  0  OVE 
-id:  1   TO 
-id:  2   
-id:  3  RETURN ERROR
-id:  4  NO
-id:  5  :
-id:  6  
-id:  7  IFCORRECT
-id:  8  >=
-id:  9  ERROR

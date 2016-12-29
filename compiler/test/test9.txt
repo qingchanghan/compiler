@@ -1,0 +1,10 @@
+void main()
+{
+	int b, c;
+	char d, e, f;
+	int a[20];
+	scanf(a[10]);
+	a['a'] = 1;
+	a[3*4 = 2;
+	printf("fsafsd);
+}

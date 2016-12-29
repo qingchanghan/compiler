@@ -1,0 +1,17 @@
+const int m = 2;
+void fun()
+{
+{{{{{{;;;;;}}}}}}
+}
+int fun1()
+{
+	printf("fa");
+	int al;
+}
+void main()
+{
+	int a, b;
+	char a;
+	
+	scanf(m);
+}

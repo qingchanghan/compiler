@@ -1,0 +1,111 @@
+const int MAX = 20, MIN = 1;
+int list[10];
+void swap(int x, int y)
+{
+	int temp;
+	temp = list[x];
+	list[x] = list[y];
+	list[y] = temp;
+}
+void qsort(int m, int n)
+{
+	int key, i, j, k;
+	int flag;
+	int t;
+	t = 0;
+	if(m < n)
+	{
+		k = (m + n) / 2;
+		swap(m, k);
+		key = list[m];
+		i = m + 1;
+		for(j = n; i <= j; t = t + 1)
+		{
+			for(flag = 1; flag == 1; t = t + 1)
+			{
+				if(i > n)
+				{
+					flag = 0;
+				}
+				else if(list[i] > key)
+				{
+					flag = 0;
+				}
+				else
+				{
+					i = i + 1;
+				}
+			}
+			for(flag = 1; flag == 1; t = t + 1)
+			{
+				if(j < m)
+				{
+					flag = 0;
+				}
+				else if(list[j] <= key)
+				{
+					flag = 0;
+				}
+				else
+				{
+					j = j - 1;
+				}
+			}
+			if(i < j)
+			{
+				swap(i, j);
+			}
+		}
+		swap(m, j);
+		qsort(m, j - 1);
+		qsort(j + 1, n);
+	}
+}
+char read()
+{
+	char c1, c2;
+	scanf(c1, c2);
+	if(c1 >= c2)
+	{
+		printf(" c1 >= c2 ");
+		return (c1);
+	}
+	else
+	{
+		printf(" c2 >= c1 ");
+		return (c2);
+	}
+}
+void change()
+{
+	int i;
+	list[0] = 1;
+	list[1] = 1;
+	i = 2;
+	do{
+		list[i] = list[i - 1] + list[i - 2];
+		i = i + 1;
+	}while(i < 6)
+}
+void print()
+{
+	int a;
+	for(a = 0; a <= 5; a = a + 1)
+		printf(" ", list[a]);
+	return;
+}
+void main()
+{
+	int a;
+	list[0] = 4;
+	list[1] = 8;
+	list[2] = 3;
+	list[3] = 5;
+	list[4] = 2;
+	list[5] = 7;
+	qsort(0, 5);
+	print();
+	printf(" input c is ", read());
+	change();
+	print();
+}
